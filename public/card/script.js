@@ -1,4 +1,4 @@
-const CONFIG={API_URL:"https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"};
+const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbw2zYfZoJF_g_iD1MkzA8vYU7IP8qltWn7I_ylhA80CyyhioTrop1HKUaWsbV1kHwnM2A/exec"};
 
 document.addEventListener("DOMContentLoaded",loadCard);
 
