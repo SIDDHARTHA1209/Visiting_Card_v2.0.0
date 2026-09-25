@@ -1,4 +1,4 @@
-const CONFIG={API_URL:"https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",MAX_IMAGE_DIMENSION:1400,TARGET_IMAGE_BYTES:180000,MAX_IMAGE_QUALITY:0.84};
+const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbw2zYfZoJF_g_iD1MkzA8vYU7IP8qltWn7I_ylhA80CyyhioTrop1HKUaWsbV1kHwnM2A/exec",MAX_IMAGE_DIMENSION:1400,TARGET_IMAGE_BYTES:180000,MAX_IMAGE_QUALITY:0.84};
 
 const $=id=>document.getElementById(id);
 const form=$("cardForm");
