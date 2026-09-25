@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>Digital Visiting Card Creator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="page">
+  <section class="hero">
+    <div>
+      <span class="eyebrow">VCARD v2.0.0</span>
+      <h1>Create your digital visiting card</h1>
+      <p>Create a professional shareable card with contact actions, QR code, location, links and downloadable vCard.</p>
+    </div>
+    <div class="hero-badge">Mobile • Desktop • PWA-ready</div>
+  </section>
+
+  <form id="cardForm" novalidate>
+    <section class="panel">
+      <div class="section-head"><span>01</span><div><h2>Basic Details</h2><p>Introduce yourself professionally.</p></div></div>
+      <div class="grid two">
+        <label>Full Name <b>*</b><input id="name" name="name" required maxlength="120" autocomplete="name"></label>
+        <label>Title / Designation<input id="title" name="title" maxlength="120"></label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><span>02</span><div><h2>Institute</h2><p>Add your organization or academic affiliation.</p></div></div>
+      <div class="grid two">
+        <label>Institute Name<input id="instituteName" name="instituteName" maxlength="180"></label>
+        <label>Tagline / Affiliation<input id="tagline" name="tagline" maxlength="180"></label>
+      </div>
+      <label>Address<textarea id="address" name="address" rows="3" maxlength="500"></textarea></label>
+      <label>Website<input id="website" name="website" type="url" placeholder="https://example.com"></label>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><span>03</span><div><h2>Contact</h2><p>Provide the actions people should be able to use.</p></div></div>
+      <div class="grid two">
+        <label>Phone <b>*</b><input id="phone" name="phone" required type="tel" autocomplete="tel"></label>
+        <label>WhatsApp Number<input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel"></label>
+      </div>
+      <label>Email(s)<input id="emails" name="emails" type="email" multiple placeholder="name@example.com, other@example.com"></label>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><span>04</span><div><h2>Photo / Logo</h2><p>Images are resized and compressed in your browser before submission.</p></div></div>
+      <div class="grid two">
+        <div class="upload-box">
+          <label>Profile Photo<input id="photo" type="file" accept="image/*"></label>
+          <img id="photoPreview" class="preview hidden" alt="Photo preview">
+          <small id="photoMeta">No image selected.</small>
+        </div>
+        <div class="upload-box">
+          <label>Institute Logo<input id="logo" type="file" accept="image/*"></label>
+          <img id="logoPreview" class="preview hidden" alt="Logo preview">
+          <small id="logoMeta">No image selected.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><span>05</span><div><h2>Location</h2><p>Use a Google Maps URL or detect your current position.</p></div></div>
+      <div class="location-row">
+        <input id="locationLink" name="locationLink" type="url" placeholder="https://maps.google.com/?q=...">
+        <button id="detectLocation" class="button secondary" type="button">Detect location</button>
+      </div>
+      <small id="locationStatus"></small>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><span>06</span><div><h2>Custom Links</h2><p>Add LinkedIn, GitHub, portfolio, research profile or any public URL.</p></div></div>
+      <div id="linksList"></div>
+      <button id="addLink" class="button secondary" type="button">+ Add a link</button>
+    </section>
+
+    <section class="panel submit-panel">
+      <div>
+        <h2>Ready to create?</h2>
+        <p>Your browser keeps a local draft until submission succeeds.</p>
+      </div>
+      <button id="submitButton" class="button primary" type="submit">Create Digital Card</button>
+    </section>
+  </form>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="script.js"></script>
+</body>
+</html>

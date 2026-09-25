@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>Card Created</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+  <div class="success-icon">✓</div>
+  <span class="eyebrow">CARD CREATED</span>
+  <h1>Your digital card is ready</h1>
+  <p id="message">Your unique card link has been generated.</p>
+  <div class="qr" id="qr"></div>
+  <code id="cardUrl"></code>
+  <div class="actions">
+    <button id="copy" class="button primary">Copy link</button>
+    <button id="open" class="button secondary">Open card</button>
+  </div>
+  <a href="../" class="back">Create another card</a>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
