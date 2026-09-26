@@ -74,6 +74,9 @@ function renderCard(r){
   const website=r.website||"";
   const map=r.locationLink||"";
 
+  const photoUrl=driveImageUrl(r.photoUrl);
+  const logoUrl=driveImageUrl(r.logoUrl);
+
   app.className="";
 
   app.innerHTML=`
@@ -84,20 +87,20 @@ function renderCard(r){
       <section class="identity">
 
         ${
-          r.photoUrl?
+          photoUrl?
           `<img
             class="photo"
-            src="${safeAttr(r.photoUrl)}"
+            src="${safeAttr(photoUrl)}"
             alt="${safeAttr(r.name)}"
           >`:
           `<div class="photo"></div>`
         }
 
         ${
-          r.logoUrl?
+          logoUrl?
           `<img
             class="logo"
-            src="${safeAttr(r.logoUrl)}"
+            src="${safeAttr(logoUrl)}"
             alt="Institute logo"
           >`:
           ""
@@ -140,9 +143,7 @@ function renderCard(r){
           `
           <div class="company-description">
             <h3>About the Company</h3>
-            <p>
-              ${escapeHtml(r.companyDescription)}
-            </p>
+            <p>${escapeHtml(r.companyDescription)}</p>
           </div>
           `:
           ""
@@ -290,7 +291,6 @@ function renderCard(r){
           customLinks.length?
           `
           <div class="custom-links">
-
             ${
               customLinks
                 .map(x=>
@@ -303,7 +303,6 @@ function renderCard(r){
                 )
                 .join("")
             }
-
           </div>
           `:
           ""
@@ -349,6 +348,24 @@ function renderCard(r){
       }
     );
   }catch(e){}
+}
+
+function driveImageUrl(value){
+  const url=String(value||"");
+
+  if(!url){
+    return "";
+  }
+
+  const match=url.match(/[?&]id=([^&]+)/);
+
+  if(match&&match[1]){
+    return "https://drive.google.com/thumbnail?id="+
+      encodeURIComponent(match[1])+
+      "&sz=w1000";
+  }
+
+  return url;
 }
 
 function detail(label,content){
@@ -431,7 +448,7 @@ function downloadVCard(r,emails){
     r.address?
       "ADR;TYPE=WORK:;;"+
       vcard(r.address)+
-      "; ; ;":
+      ";;;":
       "",
     "END:VCARD"
   ]
