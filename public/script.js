@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded",function(){
   setupImage("logo","logoPreview","logoMeta");
   $("addLink").addEventListener("click",()=>addLinkRow());
   $("detectLocation").addEventListener("click",detectLocation);
+  $("viewLocation").addEventListener("click",viewLocation);
+  $("closeLocationMap").addEventListener("click",closeLocationMap);
   form.addEventListener("input",saveDraft);
   form.addEventListener("submit",submitForm);
 });
@@ -102,6 +104,7 @@ async function submitForm(event){
       title:$("title").value.trim(),
       instituteName:$("instituteName").value.trim(),
       tagline:$("tagline").value.trim(),
+      companyDescription:$("companyDescription").value.trim(),
       address:$("address").value.trim(),
       website:$("website").value.trim(),
       phone:$("phone").value.trim(),
@@ -138,6 +141,7 @@ function detectLocation(){
       const {latitude,longitude}=position.coords;
       $("locationLink").value=`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
       status.textContent=`Location detected: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+      closeLocationMap();
       saveDraft();
     },
     ()=>{status.textContent="Could not detect location. Enter a Google Maps URL manually.";},
@@ -145,9 +149,49 @@ function detectLocation(){
   );
 }
 
+function viewLocation(){
+  const location=$("locationLink").value.trim();
+  const status=$("locationStatus");
+
+  if(!location){
+    status.textContent="Enter or detect a location first.";
+    notify("Please enter or detect a location first.",true);
+    return;
+  }
+
+  if(!validUrl(location)){
+    status.textContent="Please enter a valid Google Maps URL.";
+    notify("Please enter a valid Google Maps URL.",true);
+    return;
+  }
+
+  const mapQuery=getMapQuery(location);
+
+  $("locationMap").src=`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+  $("locationMapContainer").classList.remove("hidden");
+  status.textContent="Verify that the displayed location is correct.";
+  saveDraft();
+}
+
+function getMapQuery(location){
+  try{
+    const url=new URL(location);
+    const query=url.searchParams.get("query")||url.searchParams.get("q");
+    if(query)return query;
+    return location;
+  }catch(e){
+    return location;
+  }
+}
+
+function closeLocationMap(){
+  $("locationMapContainer").classList.add("hidden");
+  $("locationMap").src="";
+}
+
 function saveDraft(){
   const draft={};
-  ["name","title","instituteName","tagline","address","website","phone","whatsapp","emails","locationLink"].forEach(id=>draft[id]=$(id).value);
+  ["name","title","instituteName","tagline","companyDescription","address","website","phone","whatsapp","emails","locationLink"].forEach(id=>draft[id]=$(id).value);
   draft.links=getLinks();
   try{localStorage.setItem("vcardDraft",JSON.stringify(draft));}catch(e){}
 }
@@ -156,7 +200,7 @@ function loadDraft(){
   try{
     const draft=JSON.parse(localStorage.getItem("vcardDraft")||"null");
     if(!draft)return;
-    ["name","title","instituteName","tagline","address","website","phone","whatsapp","emails","locationLink"].forEach(id=>{if(draft[id])$(id).value=draft[id];});
+    ["name","title","instituteName","tagline","companyDescription","address","website","phone","whatsapp","emails","locationLink"].forEach(id=>{if(draft[id])$(id).value=draft[id];});
     (draft.links||[]).forEach(addLinkRow);
   }catch(e){}
 }
