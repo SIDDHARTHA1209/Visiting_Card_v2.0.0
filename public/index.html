@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0F766E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Digital Visiting Card</title>
+<link rel="stylesheet" href="style.css?v=2400">
+</head>
+<body>
+<main class="home-page">
+  <header class="home-header">
+    <div class="brand"><img src="icons/icon-192.png" alt="Visiting Card"><div><span>Digital Visiting Card</span><small>Personal Card Collection</small></div></div>
+    <a class="home-create" href="create/">Create Card</a>
+  </header>
+  <section class="welcome-card">
+    <div class="welcome-copy"><span class="eyebrow">WELCOME</span><h1 id="welcomeName">Welcome</h1><p id="welcomeInstitute">Select a card to view your digital visiting card.</p></div>
+    <div class="welcome-media"><img id="welcomeImage" alt="Card image"><span id="welcomeInitials">VC</span></div>
+  </section>
+  <section class="select-section">
+    <label for="cardSelect">Select Card</label>
+    <select id="cardSelect"><option value="">-- Choose a Card --</option></select>
+  </section>
+  <section id="selectedPreview" class="selected-preview hidden">
+    <div class="preview-card">
+      <div class="preview-logo"><img id="previewLogo" alt="Institute logo"><span id="previewLogoText">VC</span></div>
+      <div class="preview-info"><h2 id="previewName"></h2><strong id="previewInstitute"></strong><span id="previewTitle"></span></div>
+      <div class="preview-photo"><img id="previewPhoto" alt="Profile photo"><span id="previewPhotoText">VC</span></div>
+    </div>
+    <section class="qr-panel">
+      <h3>Scan to View Digital Card</h3>
+      <div id="homeQr" class="home-qr"></div>
+      <p>Scan this QR code to open the selected visiting card.</p>
+    </section>
+    <button id="viewResponsesButton" class="view-card" type="button">View Viewer Responses <span>↗</span></button>
+  </section>
+  <section id="emptyState" class="empty-state hidden">
+    <div class="empty-icon">＋</div><h2>No cards yet</h2><p>Create your first digital visiting card to get started.</p><a class="empty-button" href="create/">Create Your First Card</a>
+  </section>
+  <footer class="home-footer">Developed by <strong>TechnoMedia Software Solutions Pvt. Ltd.</strong></footer>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="script.js?v=2300"></script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=2400",{scope:"./"}).catch(()=>{}));}</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name":"Digital Visiting Card Creator",
+  "short_name":"Visiting Card",
+  "description":"Create and share digital visiting cards.",
+  "start_url":"/Visiting_Card_v2.0.0/",
+  "scope":"/Visiting_Card_v2.0.0/",
+  "display":"standalone",
+  "orientation":"portrait-primary",
+  "background_color":"#111318",
+  "theme_color":"#0F766E",
+  "icons":[
+    {
+      "src":"/Visiting_Card_v2.0.0/icons/icon-192.png",
+      "sizes":"192x192",
+      "type":"image/png",
+      "purpose":"any maskable"
+    },
+    {
+      "src":"/Visiting_Card_v2.0.0/icons/icon-512.png",
+      "sizes":"512x512",
+      "type":"image/png",
+      "purpose":"any maskable"
+    }
+  ]
+}

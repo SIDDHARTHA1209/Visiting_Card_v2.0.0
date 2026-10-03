@@ -1,0 +1,740 @@
+const CONFIG={
+  API_URL:"https://script.google.com/macros/s/AKfycbz5gpC6_-LX0Q4E1r-DTkIVilTLZgoENzrJlzEvx9iY-dxACnGqPZLelcqkxETA-NcWhA/exec",
+  FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/",
+  MAX_IMAGE_DIMENSION:1400,
+  TARGET_IMAGE_BYTES:180000,
+  MAX_IMAGE_QUALITY:0.84
+};
+
+const $=id=>document.getElementById(id);
+const form=$("cardForm");
+const toast=$("toast");
+
+let toastTimer;
+let deferredInstallPrompt=null;
+
+document.addEventListener("DOMContentLoaded",function(){
+  loadDraft();
+  if(!$("linksList").querySelector(".link-row"))addLinkRow();
+  setupImage("photo","photoPreview","photoMeta");
+  setupImage("logo","logoPreview","logoMeta");
+  setupInstallPrompt();
+
+  $("addLink").addEventListener("click",()=>addLinkRow());
+  $("detectLocation").addEventListener("click",detectLocation);
+  $("viewLocation").addEventListener("click",viewLocation);
+  $("closeLocationMap").addEventListener("click",closeLocationMap);
+  form.addEventListener("input",saveDraft);
+  form.addEventListener("submit",submitForm);
+});
+
+function notify(message,isError=false){
+  toast.textContent=message;
+  toast.style.background=isError?"#991b1b":"#172033";
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove("show"),3500);
+}
+
+function setupInstallPrompt(){
+  window.addEventListener("beforeinstallprompt",event=>{
+    event.preventDefault();
+    deferredInstallPrompt=event;
+    createInstallButton();
+  });
+
+  window.addEventListener("appinstalled",()=>{
+    deferredInstallPrompt=null;
+    removeInstallButton();
+    notify("Digital Visiting Card Creator installed successfully.");
+  });
+
+  if(isIOS()&&!isStandalone()){
+    createIOSInstallButton();
+  }
+}
+
+function createInstallButton(){
+  if($("installAppButton"))return;
+
+  const button=document.createElement("button");
+
+  button.id="installAppButton";
+  button.className="button secondary";
+  button.type="button";
+  button.textContent="Install App";
+  button.addEventListener("click",installApp);
+
+  const hero=document.querySelector(".hero");
+
+  if(hero){
+    hero.appendChild(button);
+  }
+}
+
+function removeInstallButton(){
+  const button=$("installAppButton");
+  if(button)button.remove();
+}
+
+async function installApp(){
+  if(!deferredInstallPrompt){
+    if(isIOS()){
+      showIOSInstallInstructions();
+    }
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+
+  const result=await deferredInstallPrompt.userChoice;
+
+  if(result.outcome==="accepted"){
+    notify("Installing Digital Visiting Card Creator...");
+  }
+
+  deferredInstallPrompt=null;
+  removeInstallButton();
+}
+
+function isIOS(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function isStandalone(){
+  return window.matchMedia("(display-mode: standalone)").matches||
+    window.navigator.standalone===true;
+}
+
+function createIOSInstallButton(){
+  if($("installAppButton"))return;
+
+  const button=document.createElement("button");
+
+  button.id="installAppButton";
+  button.className="button secondary";
+  button.type="button";
+  button.textContent="Install App";
+  button.addEventListener("click",showIOSInstallInstructions);
+
+  const hero=document.querySelector(".hero");
+
+  if(hero){
+    hero.appendChild(button);
+  }
+}
+
+function showIOSInstallInstructions(){
+  notify(
+    "On iPhone/iPad: tap Share, select Add to Home Screen, then tap Add."
+  );
+}
+
+function setupImage(inputId,previewId,metaId){
+  $(inputId).addEventListener("change",async function(){
+    const file=this.files[0];
+
+    if(!file)return;
+
+    try{
+      const result=await processImage(file);
+
+      this.dataset.payload=JSON.stringify(result);
+      $(previewId).src=result.data;
+      $(previewId).classList.remove("hidden");
+      $(metaId).textContent=
+        `${file.name} • ${formatBytes(result.bytes)} after compression`;
+
+      saveDraft();
+    }catch(err){
+      notify(err.message,true);
+    }
+  });
+}
+
+async function processImage(file){
+  if(!file.type.startsWith("image/")){
+    throw new Error("Please select an image file.");
+  }
+
+  const bitmap=await createImageBitmap(file);
+
+  const scale=Math.min(
+    1,
+    CONFIG.MAX_IMAGE_DIMENSION/
+    Math.max(bitmap.width,bitmap.height)
+  );
+
+  const canvas=document.createElement("canvas");
+
+  canvas.width=Math.max(
+    1,
+    Math.round(bitmap.width*scale)
+  );
+
+  canvas.height=Math.max(
+    1,
+    Math.round(bitmap.height*scale)
+  );
+
+  canvas
+    .getContext("2d")
+    .drawImage(
+      bitmap,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+  let quality=CONFIG.MAX_IMAGE_QUALITY;
+  let data=canvas.toDataURL("image/jpeg",quality);
+
+  while(
+    data.length*0.75>CONFIG.TARGET_IMAGE_BYTES&&
+    quality>0.5
+  ){
+    quality-=0.06;
+    data=canvas.toDataURL("image/jpeg",quality);
+  }
+
+  return{
+    name:file.name,
+    type:"image/jpeg",
+    data:data,
+    bytes:Math.ceil(data.length*.75)
+  };
+}
+
+function formatBytes(bytes){
+  if(bytes<1024)return bytes+" B";
+  if(bytes<1048576)return(bytes/1024).toFixed(1)+" KB";
+  return(bytes/1048576).toFixed(1)+" MB";
+}
+
+function addLinkRow(data={},checkPrevious=true){
+  const rows=[...document.querySelectorAll(".link-row")];
+
+  if(checkPrevious&&rows.length){
+    const last=rows[rows.length-1];
+    const label=last.querySelector(".link-label").value.trim();
+    const url=last.querySelector(".link-url").value.trim();
+
+    if(!label||!url){
+      notify(
+        "Please complete the current link before adding another.",
+        true
+      );
+      return false;
+    }
+
+    if(!validUrl(url)){
+      notify(
+        "Please enter a valid URL before adding another link.",
+        true
+      );
+      return false;
+    }
+  }
+
+  if(rows.length>=20){
+    notify(
+      "You can add a maximum of 20 custom links.",
+      true
+    );
+    return false;
+  }
+
+  const row=document.createElement("div");
+
+  row.className="link-row";
+
+  row.innerHTML=`
+    <input
+      class="link-label"
+      maxlength="80"
+      placeholder="Label"
+      value="${escapeAttr(data.label||"")}"
+    >
+    <input
+      class="link-url"
+      type="url"
+      placeholder="https://..."
+      value="${escapeAttr(data.url||"")}"
+    >
+    <button
+      type="button"
+      aria-label="Remove link"
+    >
+      Remove
+    </button>
+  `;
+
+  row.querySelector("button").addEventListener("click",()=>{
+    row.remove();
+
+    if(!$("linksList").querySelector(".link-row")){
+      addLinkRow({},false);
+    }
+
+    saveDraft();
+  });
+
+  row.querySelectorAll("input").forEach(input=>{
+    input.addEventListener("input",saveDraft);
+  });
+
+  $("linksList").appendChild(row);
+
+  return true;
+}
+
+function getLinks(){
+  return[...document.querySelectorAll(".link-row")]
+    .map(row=>({
+      label:row.querySelector(".link-label").value.trim(),
+      url:row.querySelector(".link-url").value.trim()
+    }))
+    .filter(x=>x.label||x.url);
+}
+
+function validate(){
+  if(!$("name").value.trim()){
+    return"Full Name is required.";
+  }
+
+  if(!$("phone").value.trim()){
+    return"Phone number is required.";
+  }
+
+  if(
+    $("website").value&&
+    !validUrl($("website").value)
+  ){
+    return"Website URL is invalid.";
+  }
+
+  if(
+    $("locationLink").value&&
+    !validUrl($("locationLink").value)
+  ){
+    return"Location URL is invalid.";
+  }
+
+  for(const link of getLinks()){
+    if(
+      !link.label||
+      !link.url||
+      !validUrl(link.url)
+    ){
+      return"Each custom link needs a label and valid URL.";
+    }
+  }
+
+  const emails=$("emails").value
+    .split(",")
+    .map(x=>x.trim())
+    .filter(Boolean);
+
+  for(const email of emails){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      return"One or more email addresses are invalid.";
+    }
+  }
+
+  return"";
+}
+
+async function submitForm(event){
+  event.preventDefault();
+
+  const error=validate();
+
+  if(error){
+    notify(error,true);
+    return;
+  }
+
+  if(
+    !CONFIG.API_URL||
+    CONFIG.API_URL.includes("YOUR_DEPLOYMENT_ID")
+  ){
+    notify(
+      "Configure the Apps Script API URL in public/script.js first.",
+      true
+    );
+    return;
+  }
+
+  const button=$("submitButton");
+
+  button.disabled=true;
+  button.textContent="Creating…";
+
+  try{
+    const body={
+      action:"submit",
+      appId:localStorage.getItem("digitalVisitingCardAppId"),
+      name:$("name").value.trim(),
+      title:$("title").value.trim(),
+      instituteName:$("instituteName").value.trim(),
+      companyDescription:$("companyDescription").value.trim(),
+      address:$("address").value.trim(),
+      website:$("website").value.trim(),
+      phone:$("phone").value.trim(),
+      whatsapp:$("whatsapp").value.trim(),
+      emails:$("emails").value.trim(),
+      locationLink:$("locationLink").value.trim(),
+      customLinks:JSON.stringify(getLinks()),
+      logoImage:readImagePayload("logo"),
+      photoImage:readImagePayload("photo")
+    };
+
+    const response=await fetch(
+      CONFIG.API_URL,
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"text/plain;charset=utf-8"
+        },
+        body:JSON.stringify(body)
+      }
+    );
+
+    const data=await response.json();
+
+    if(!data.success){
+      throw new Error(
+        data.error||"Unable to create the card."
+      );
+    }
+
+    if(!data.guid){
+      throw new Error(
+        "Card was created but no card ID was returned."
+      );
+    }
+
+    const cardUrl=
+      data.cardUrl||
+      CONFIG.FRONTEND_BASE_URL+
+      "card/?guid="+
+      encodeURIComponent(data.guid);
+
+    localStorage.removeItem("vcardDraft");
+
+    location.href=
+      "../success/?guid="+
+      encodeURIComponent(data.guid)+
+      "&cardUrl="+
+      encodeURIComponent(cardUrl);
+
+  }catch(err){
+    notify(
+      err.message||
+      "Network error. Please try again.",
+      true
+    );
+
+    button.disabled=false;
+    button.textContent="Create Digital Card";
+  }
+}
+
+function readImagePayload(id){
+  const raw=$(id).dataset.payload;
+  return raw?JSON.parse(raw):null;
+}
+
+function detectLocation(){
+  const status=$("locationStatus");
+  const button=$("detectLocation");
+
+  if(!navigator.geolocation){
+    status.textContent="Geolocation is not supported by this browser.";
+    notify("Geolocation is not supported by this browser.",true);
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent="Detecting...";
+  status.textContent="Getting your current location...";
+
+  navigator.geolocation.getCurrentPosition(
+    position=>{
+      const{latitude,longitude,accuracy}=position.coords;
+
+      button.disabled=false;
+      button.textContent="Detect location";
+
+      if(!Number.isFinite(latitude)||!Number.isFinite(longitude)){
+        status.textContent="Invalid location data received.";
+        notify("Unable to get a valid location.",true);
+        return;
+      }
+
+      if(accuracy>200){
+        status.textContent=
+          `Location accuracy is approximately ${Math.round(accuracy)} meters. Try again from a device with better location access.`;
+
+        notify(
+          `Location is not accurate enough (${Math.round(accuracy)} m). Please try again.`,
+          true
+        );
+
+        return;
+      }
+
+      const location=
+        `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+      $("locationLink").value=location;
+
+      status.textContent=
+        `Location detected with approximately ${Math.round(accuracy)} meter accuracy.`;
+
+      closeLocationMap();
+      saveDraft();
+    },
+    error=>{
+      button.disabled=false;
+      button.textContent="Detect location";
+
+      let message="Could not detect your location.";
+
+      if(error.code===1){
+        message="Location permission was denied. Please allow location access.";
+      }else if(error.code===2){
+        message="Your location is currently unavailable.";
+      }else if(error.code===3){
+        message="Location detection timed out. Please try again.";
+      }
+
+      status.textContent=message;
+      notify(message,true);
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:30000,
+      maximumAge:0
+    }
+  );
+}
+
+function viewLocation(){
+  const location=$("locationLink").value.trim();
+  const status=$("locationStatus");
+
+  if(!location){
+    status.textContent=
+      "Enter or detect a location first.";
+
+    notify(
+      "Please enter or detect a location first.",
+      true
+    );
+
+    return;
+  }
+
+  if(!validUrl(location)){
+    status.textContent=
+      "Please enter a valid Google Maps URL.";
+
+    notify(
+      "Please enter a valid Google Maps URL.",
+      true
+    );
+
+    return;
+  }
+
+  const mapQuery=getMapQuery(location);
+
+  $("locationMap").src=
+    `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+
+  $("locationMapContainer").classList.remove("hidden");
+
+  status.textContent=
+    "Verify that the displayed location is correct.";
+
+  saveDraft();
+}
+
+function getMapQuery(location){
+  try{
+    const url=new URL(location);
+
+    const query=
+      url.searchParams.get("query")||
+      url.searchParams.get("q");
+
+    if(query)return query;
+
+    return location;
+  }catch(e){
+    return location;
+  }
+}
+
+function closeLocationMap(){
+  $("locationMapContainer").classList.add("hidden");
+  $("locationMap").src="";
+}
+
+function saveDraft(){
+  const draft={};
+
+  [
+    "name",
+    "title",
+    "instituteName",
+    "companyDescription",
+    "address",
+    "website",
+    "phone",
+    "whatsapp",
+    "emails",
+    "locationLink"
+  ].forEach(id=>{
+    draft[id]=$(id).value;
+  });
+
+  draft.links=getLinks();
+
+  try{
+    localStorage.setItem(
+      "vcardDraft",
+      JSON.stringify(draft)
+    );
+  }catch(e){}
+}
+
+function clearFormFields(){
+  [
+    "name",
+    "title",
+    "instituteName",
+    "companyDescription",
+    "address",
+    "website",
+    "phone",
+    "whatsapp",
+    "emails",
+    "locationLink"
+  ].forEach(id=>{
+    const element=$(id);
+
+    if(element){
+      element.value="";
+    }
+  });
+
+  [
+    "photo",
+    "logo"
+  ].forEach(id=>{
+    const element=$(id);
+
+    if(element){
+      element.value="";
+      delete element.dataset.payload;
+    }
+  });
+
+  if($("photoPreview")){
+    $("photoPreview").src="";
+    $("photoPreview").classList.add("hidden");
+  }
+
+  if($("logoPreview")){
+    $("logoPreview").src="";
+    $("logoPreview").classList.add("hidden");
+  }
+
+  if($("photoMeta")){
+    $("photoMeta").textContent="No image selected.";
+  }
+
+  if($("logoMeta")){
+    $("logoMeta").textContent="No image selected.";
+  }
+
+  if($("linksList")){
+    $("linksList").innerHTML="";
+  }
+}
+
+function loadDraft(){
+  try{
+    const raw=localStorage.getItem("vcardDraft");
+
+    if(!raw){
+      clearFormFields();
+      return;
+    }
+
+    const draft=JSON.parse(raw);
+
+    if(!draft){
+      clearFormFields();
+      return;
+    }
+
+    [
+      "name",
+      "title",
+      "instituteName",
+        "companyDescription",
+      "address",
+      "website",
+      "phone",
+      "whatsapp",
+      "emails",
+      "locationLink"
+    ].forEach(id=>{
+      const element=$(id);
+
+      if(element){
+        element.value=draft[id]||"";
+      }
+    });
+
+    if($("linksList")){
+      $("linksList").innerHTML="";
+    }
+
+    (Array.isArray(draft.links)?draft.links:[])
+      .forEach(link=>addLinkRow(link,false));
+
+  }catch(e){
+    clearFormFields();
+    console.error("Could not load draft:",e);
+  }
+}
+
+function validUrl(value){
+  try{
+    const u=new URL(
+      /^https?:\/\//i.test(value)
+        ?value
+        :"https://"+value
+    );
+
+    return(
+      u.protocol==="http:"||
+      u.protocol==="https:"
+    );
+  }catch(e){
+    return false;
+  }
+}
+
+function escapeAttr(value){
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
