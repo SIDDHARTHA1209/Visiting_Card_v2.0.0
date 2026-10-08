@@ -1,214 +1,266 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0F766E">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Visiting Card">
-<link rel="manifest" href="../manifest.json">
-<link rel="apple-touch-icon" href="../icons/icon-192.png">
-<title>Digital Visiting Card Creator</title>
-<link rel="stylesheet" href="style.css">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="theme-color" content="#0F766E">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="apple-mobile-web-app-title" content="Visiting Card">
+	<link rel="manifest" href="../manifest.json">
+	<link rel="apple-touch-icon" href="../icons/icon-192.png">
+	<title>Digital Visiting Card Creator</title>
+	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="page">
-<a href="../" class="back-home">← Back to Home</a>
-<section class="hero">
-<div>
-<span class="eyebrow">VCARD v2.0.0</span>
-<h1>Create your digital visiting card</h1>
-<p>Create a professional shareable card with contact actions, QR code, location, links and downloadable vCard.</p>
-</div>
-<div class="hero-badge">Mobile • Desktop • PWA-ready</div>
-</section>
-<form id="cardForm" autocomplete="off" novalidate>
-<section class="panel">
-<div class="section-head">
-<span>01</span>
-<div>
-<h2>Basic Details</h2>
-<p>Kindly introduce yourself professionally.</p>
-</div>
-</div>
-<div class="grid two">
-<label>
-Full Name <b>*</b>
-<input id="name" name="name" required maxlength="120" autocomplete="name">
-</label>
-<label>
-Title / Designation
-<input id="title" name="title" maxlength="120">
-</label>
-</div>
-</section>
-<section class="panel">
-<div class="section-head">
-<span>02</span>
-<div>
-<h2>Institute</h2>
-<p>Kindly provide your organization or academic affiliation.</p>
-</div>
-</div>
-<div class="grid two">
-<label>
-Institute Name
-<input id="instituteName" name="instituteName" maxlength="180">
-</label>
-<div class="upload-box">
-<label>Institute Logo</label>
-<input id="logo" type="file" accept="image/*" hidden>
-<button id="logoAddButton" class="button secondary image-add-button" type="button">
-+ Add Image
-</button>
-<img id="logoPreview" class="preview hidden" alt="Institute logo preview">
-<small id="logoMeta">Kindly add your institute logo.</small>
-</div>
-</div>
-<label>
-Company Description
-<textarea id="companyDescription" name="companyDescription" rows="4" maxlength="1000" placeholder="Kindly describe your company or institution..."></textarea>
-<small>Kindly describe your company, organization or institution briefly.</small>
-</label>
-<label>
-Address
-<textarea id="address" name="address" rows="3" maxlength="500"></textarea>
-</label>
-<label>
-Website
-<input id="website" name="website" type="url" placeholder="https://example.com">
-</label>
-</section>
-<section class="panel">
-<div class="section-head">
-<span>03</span>
-<div>
-<h2>Contact</h2>
-<p>Kindly provide the contact actions people should be able to use.</p>
-</div>
-</div>
-<div class="grid two">
-<label>
-Phone <b>*</b>
-<input id="phone" name="phone" required type="tel" autocomplete="tel">
-</label>
-<label>
-WhatsApp Number
-<input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel">
-</label>
-</div>
-<label>
-Email(s)
-<input id="emails" name="emails" type="email" multiple placeholder="name@example.com, other@example.com">
-</label>
-</section>
-<section class="panel">
-<div class="section-head">
-<span>04</span>
-<div>
-<h2>Profile Photo</h2>
-<p>Kindly add the person's profile photo separately from the institute logo.</p>
-</div>
-</div>
-<div class="upload-box profile-upload">
-<label>Profile Photo</label>
-<input id="photo" type="file" accept="image/*" hidden>
-<button id="photoAddButton" class="button secondary image-add-button" type="button">
-+ Add Image
-</button>
-<img id="photoPreview" class="preview hidden" alt="Photo preview">
-<small id="photoMeta">Kindly add a profile photo.</small>
-</div>
-</section>
-<section class="panel">
-<div class="section-head">
-<span>05</span>
-<div>
-<h2>Location</h2>
-<p>Kindly enter a Google Maps URL or detect your current position.</p>
-</div>
-</div>
-<div class="location-row">
-<input id="locationLink" name="locationLink" type="url" placeholder="https://maps.google.com/?q=...">
-<button id="detectLocation" class="button secondary" type="button">
-Detect location
-</button>
-<button id="viewLocation" class="button secondary" type="button">
-View location
-</button>
-</div>
-<small id="locationStatus"></small>
-<div id="locationMapContainer" class="location-map-container hidden" aria-hidden="true">
-<div class="location-map-header">
-<div>
-<strong>Location Preview</strong>
-<small>Kindly verify that the displayed location is correct.</small>
-</div>
-<button id="closeLocationMap" class="button secondary" type="button">
-Close
-</button>
-</div>
-<div class="location-map">
-<iframe
-id="locationMap"
-title="Google Maps location preview"
-loading="lazy"
-referrerpolicy="no-referrer-when-downgrade"
-allowfullscreen
-></iframe>
-</div>
-</div>
-</section>
-<section class="panel">
-<div class="section-head">
-<span>06</span>
-<div>
-<h2>Custom Links</h2>
-<p>Kindly add LinkedIn, GitHub, portfolio, research profile or any public URL.</p>
-</div>
-</div>
-<div id="linksList"></div>
-<button id="addLink" class="button secondary" type="button">
-+ Add a link
-</button>
-</section>
-<section class="panel">
-<div class="section-head">
-<span>07</span>
-<div>
-<h2>Card Name</h2>
-<p>Kindly give this card a name if you want to identify it easily.</p>
-</div>
-</div>
-<label>
-Would you like to give a name to this card?
-<input id="cardName" name="cardName" type="text" maxlength="80" placeholder="Example: College Card" autocomplete="off">
-<small>This name is used to identify your card inside the application.</small>
-</label>
-</section>
-<section class="panel submit-panel">
-<div>
-<h2>Ready to create?</h2>
-<p>Your browser keeps a local draft until submission succeeds.</p>
-</div>
-<button id="submitButton" class="button primary" type="submit">
-Create Digital Card
-</button>
-</section>
-</form>
-</main>
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="script.js"></script>
-<script>
-if("serviceWorker" in navigator){
-window.addEventListener("load",()=>{
-navigator.serviceWorker.register("../sw.js",{scope:"../"})
-.then(reg=>console.log("Service Worker registered:",reg.scope))
-.catch(error=>console.error("Service Worker registration failed:",error));
-});
-}
-</script>
+	<main class="page">
+		<a href="../" class="back-home">← Back to Home</a>
+
+		<section class="hero">
+			<div>
+				<span class="eyebrow">VCARD v2.0.0</span>
+				<h1>Create your digital visiting card</h1>
+				<p>Create a professional shareable card with contact actions, QR code, location, links and downloadable vCard.</p>
+			</div>
+			<div class="hero-badge">Mobile • Desktop • PWA-ready</div>
+		</section>
+
+		<form id="cardForm" autocomplete="off" novalidate>
+
+			<section class="panel">
+				<div class="section-head">
+					<span>01</span>
+					<div>
+						<h2>Basic Details</h2>
+						<p>Kindly introduce yourself professionally.</p>
+					</div>
+				</div>
+
+				<div class="grid two">
+					<label>
+						Full Name <b>*</b>
+						<input id="name" name="name" required maxlength="120" autocomplete="name">
+					</label>
+
+					<label>
+						Title / Designation
+						<input id="title" name="title" maxlength="120">
+					</label>
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="section-head">
+					<span>02</span>
+					<div>
+						<h2>Institute</h2>
+						<p>Kindly provide your organization or academic affiliation.</p>
+					</div>
+				</div>
+
+				<div class="grid two">
+					<label>
+						Institute Name
+						<input id="instituteName" name="instituteName" maxlength="180">
+					</label>
+
+					<div class="upload-box">
+						<label>Institute Logo</label>
+
+						<input id="logo" type="file" accept="image/*" hidden>
+
+						<button id="logoAddButton" class="image-upload-button" type="button" aria-label="Add institute logo">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<rect x="3" y="3" width="18" height="18" rx="3"></rect>
+								<circle cx="8.5" cy="8.5" r="1.5"></circle>
+								<path d="M21 15l-5-5L5 21"></path>
+							</svg>
+						</button>
+
+						<img id="logoPreview" class="preview hidden" alt="Institute logo preview">
+						<small id="logoMeta">Kindly add your institute logo.</small>
+					</div>
+				</div>
+
+				<label>
+					Company Description
+					<textarea id="companyDescription" name="companyDescription" rows="4" maxlength="1000" placeholder="Kindly describe your company or institution..."></textarea>
+					<small>Kindly describe your company, organization or institution briefly.</small>
+				</label>
+
+				<label>
+					Address
+					<textarea id="address" name="address" rows="3" maxlength="500"></textarea>
+				</label>
+
+				<label>
+					Website
+					<input id="website" name="website" type="url" placeholder="https://example.com">
+				</label>
+			</section>
+
+			<section class="panel">
+				<div class="section-head">
+					<span>03</span>
+					<div>
+						<h2>Contact</h2>
+						<p>Kindly provide the contact actions people should be able to use.</p>
+					</div>
+				</div>
+
+				<div class="grid two">
+					<label>
+						Phone <b>*</b>
+						<input id="phone" name="phone" required type="tel" autocomplete="tel">
+					</label>
+
+					<label>
+						WhatsApp Number
+						<input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel">
+					</label>
+				</div>
+
+				<label>
+					Email(s)
+					<input id="emails" name="emails" type="email" multiple placeholder="name@example.com, other@example.com">
+				</label>
+			</section>
+
+			<section class="panel">
+				<div class="section-head">
+					<span>04</span>
+					<div>
+						<h2>Profile Photo</h2>
+						<p>Kindly add the person's profile photo separately from the institute logo.</p>
+					</div>
+				</div>
+
+				<div class="upload-box profile-upload">
+					<label>Profile Photo</label>
+
+					<input id="photo" type="file" accept="image/*" hidden>
+
+					<button id="photoAddButton" class="image-upload-button" type="button" aria-label="Add profile photo">
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<rect x="3" y="3" width="18" height="18" rx="3"></rect>
+							<circle cx="8.5" cy="8.5" r="1.5"></circle>
+							<path d="M21 15l-5-5L5 21"></path>
+						</svg>
+					</button>
+
+					<img id="photoPreview" class="preview hidden" alt="Photo preview">
+					<small id="photoMeta">Kindly add a profile photo.</small>
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="section-head">
+					<span>05</span>
+					<div>
+						<h2>Location</h2>
+						<p>Kindly enter a Google Maps URL or detect your current position.</p>
+					</div>
+				</div>
+
+				<div class="location-row">
+					<input id="locationLink" name="locationLink" type="url" placeholder="https://maps.google.com/?q=...">
+
+					<button id="detectLocation" class="button secondary" type="button">
+						Detect location
+					</button>
+
+					<button id="viewLocation" class="button secondary" type="button">
+						View location
+					</button>
+				</div>
+
+				<small id="locationStatus"></small>
+
+				<div id="locationMapContainer" class="location-map-container hidden" aria-hidden="true">
+					<div class="location-modal">
+						<div class="location-map-header">
+							<div>
+								<strong>Location Preview</strong>
+								<small>Kindly verify that the displayed location is correct.</small>
+							</div>
+
+							<button id="closeLocationMap" class="location-close-button" type="button" aria-label="Close location preview">
+								×
+							</button>
+						</div>
+
+						<div class="location-map">
+							<iframe
+								id="locationMap"
+								title="Google Maps location preview"
+								loading="lazy"
+								referrerpolicy="no-referrer-when-downgrade"
+								allowfullscreen>
+							</iframe>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="panel">
+				<div class="section-head">
+					<span>06</span>
+					<div>
+						<h2>Custom Links</h2>
+						<p>Kindly add LinkedIn, GitHub, portfolio, research profile or any public URL.</p>
+					</div>
+				</div>
+
+				<div id="linksList"></div>
+
+				<button id="addLink" class="button secondary" type="button">
+					+ Add a link
+				</button>
+			</section>
+
+			<section class="panel card-name-section">
+				<div class="section-head">
+					<span>07</span>
+					<div>
+						<h2>Card Name</h2>
+						<p>Kindly give this card a name if you want to identify it easily.</p>
+					</div>
+				</div>
+
+				<label>
+					Would you like to give a name to this card?
+					<input id="cardName" name="cardName" type="text" maxlength="80" placeholder="Example: College Card" autocomplete="off">
+					<small>This name is used to identify your card inside the application.</small>
+				</label>
+			</section>
+
+			<section class="panel submit-panel">
+				<div>
+					<h2>Ready to create?</h2>
+					<p>Your browser keeps a local draft until submission succeeds.</p>
+				</div>
+
+				<button id="submitButton" class="button primary" type="submit">
+					Create Digital Card
+				</button>
+			</section>
+
+		</form>
+	</main>
+
+	<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+	<script src="script.js"></script>
+
+	<script>
+		if("serviceWorker" in navigator){
+			window.addEventListener("load",()=>{
+				navigator.serviceWorker.register("../sw.js",{scope:"../"})
+					.then(reg=>console.log("Service Worker registered:",reg.scope))
+					.catch(error=>console.error("Service Worker registration failed:",error));
+			});
+		}
+	</script>
 </body>
 </html>
