@@ -3,35 +3,58 @@ const CONFIG={
   FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/"
 };
 
-let currentCard=null,savedCards=[],flipped=false;
+let currentCard=null;
+let savedCards=[];
+let flipped=false;
 
 const $=id=>document.getElementById(id);
 
-document.addEventListener("DOMContentLoaded",loadCard);
+document.addEventListener(
+  "DOMContentLoaded",
+  loadCard
+);
 
 async function loadCard(){
-  const guid=new URLSearchParams(location.search).get("guid");
+
+  const guid=
+    new URLSearchParams(
+      location.search
+    ).get("guid");
 
   if(!guid){
-    showError("Missing card GUID.");
+    showError(
+      "Missing card GUID."
+    );
     return;
   }
 
   try{
-    const data=await api(
-      "?action=card&guid="+encodeURIComponent(guid)
-    );
 
-    if(!data.success||!data.record){
-      throw new Error(data.error||"Card not found.");
+    const data=
+      await api(
+        "?action=card&guid="+
+        encodeURIComponent(guid)
+      );
+
+    if(
+      !data.success||
+      !data.record
+    ){
+      throw new Error(
+        data.error||
+        "Card not found."
+      );
     }
 
-    currentCard=data.record;
+    currentCard=
+      data.record;
 
     renderCard();
 
     loadOwnedCards(guid);
+
   }catch(error){
+
     showError(
       error.message||
       "Unable to load card."
@@ -39,79 +62,104 @@ async function loadCard(){
   }
 }
 
-async function loadOwnedCards(currentGuid){
-  const appId=localStorage.getItem(
-    "digitalVisitingCardAppId"
-  );
+async function loadOwnedCards(
+  currentGuid
+){
+
+  const appId=
+    localStorage.getItem(
+      "digitalVisitingCardAppId"
+    );
 
   if(!appId)return;
 
   try{
-    const data=await api(
-      "?action=ownedcards&appId="+
-      encodeURIComponent(appId)
-    );
+
+    const data=
+      await api(
+        "?action=ownedcards&appId="+
+        encodeURIComponent(appId)
+      );
 
     savedCards=
       Array.isArray(data.cards)?
       data.cards:
       [];
 
-    const select=$("cardSelect");
+    const select=
+      $("cardSelect");
 
     if(!select)return;
 
     select.innerHTML=
-      savedCards.map(card=>`
-        <option value="${safeAttr(card.guid)}">
-          ${escapeHtml(card.name||"Untitled Card")}
-          ${card.title?
-            " — "+escapeHtml(card.title):
-            ""}
-        </option>
-      `).join("");
+      savedCards.map(
+        card=>`
+          <option
+            value="${safeAttr(card.guid)}"
+          >
+            ${escapeHtml(
+              card.name||
+              "Untitled Card"
+            )}
+            ${
+              card.title?
+              " — "+
+              escapeHtml(
+                card.title
+              ):
+              ""
+            }
+          </option>
+        `
+      ).join("");
 
     if(
       !savedCards.some(
-        card=>card.guid===currentGuid
+        card=>
+          card.guid===
+          currentGuid
       )
     ){
+
       select.insertAdjacentHTML(
         "afterbegin",
-        `<option value="${safeAttr(currentGuid)}">
-          Current Card — ${escapeHtml(
-            currentCard.name||"Card"
-          )}
-        </option>`
+        `
+          <option
+            value="${safeAttr(currentGuid)}"
+          >
+            Current Card —
+            ${escapeHtml(
+              currentCard.name||
+              "Card"
+            )}
+          </option>
+        `
       );
     }
 
-    select.value=currentGuid;
+    select.value=
+      currentGuid;
 
-    $("cardSelector").classList.remove(
-      "hidden"
-    );
-  }catch(e){}
+    $("cardSelector")
+      .classList
+      .remove("hidden");
+
+  }catch(error){}
 }
 
 async function api(query){
-  const response=await fetch(
-    CONFIG.API_URL+query,
-    {
-      cache:"no-store"
-    }
-  );
 
-  const contentType=
-    response.headers.get("content-type")||"";
-
-  if(!contentType.includes("application/json")){
-    throw new Error(
-      "The server returned an invalid response."
+  const response=
+    await fetch(
+      CONFIG.API_URL+
+      query,
+      {
+        cache:"no-store"
+      }
     );
-  }
 
-  const data=await response.json();
+  const data=
+    await response.json();
 
   if(
     !response.ok||
@@ -127,49 +175,61 @@ async function api(query){
 }
 
 function renderCard(){
-  const r=currentCard;
+
+  const r=
+    currentCard;
 
   const emails=
     String(r.emails||"")
       .split(",")
-      .map(x=>x.trim())
+      .map(
+        x=>x.trim()
+      )
       .filter(Boolean);
 
   const links=
-    Array.isArray(r.customLinks)?
+    Array.isArray(
+      r.customLinks
+    )?
     r.customLinks:
-    parseLinks(r.customLinks);
+    parseLinks(
+      r.customLinks
+    );
 
-  const logo=driveImageUrl(
-    r.logoUrl
-  );
+  const logo=
+    driveImageUrl(
+      r.logoUrl
+    );
 
-  const photo=driveImageUrl(
-    r.photoUrl
-  );
+  const photo=
+    driveImageUrl(
+      r.photoUrl
+    );
 
   const website=
     r.website?
-    normalizeWebsite(r.website):
-    "";
-
-  const map=
-    r.locationLink?
-    directionsUrl(r.locationLink):
+    normalizeWebsite(
+      r.website
+    ):
     "";
 
   const description=
     r.companyDescription||
     r.description||
-    "";
+    "Connect with this card owner.";
 
   document.title=
-    (r.name||"Digital Visiting Card")+
+    (
+      r.name||
+      "Digital Visiting Card"
+    )+
     " • Digital Card";
 
-  $("app").className="card-page";
+  $("app").className=
+    "card-page";
 
   $("app").innerHTML=`
+
     <header class="page-header">
 
       <a
@@ -183,14 +243,17 @@ function renderCard(){
         id="cardSelector"
         class="card-selector hidden"
       >
-        <label for="cardSelect">
+
+        <label
+          for="cardSelect"
+        >
           Select Card
         </label>
 
         <select
           id="cardSelect"
-          aria-label="Select Card"
         ></select>
+
       </div>
 
       <a
@@ -211,8 +274,8 @@ function renderCard(){
       <div
         id="cardStage"
         class="card-stage"
-        role="button"
         tabindex="0"
+        role="button"
         aria-label="Flip digital visiting card"
       >
 
@@ -221,180 +284,339 @@ function renderCard(){
           class="card-inner"
         >
 
-          <article class="visiting-card card-front">
+          <!-- FRONT -->
 
-            <div class="front-header"></div>
+          <article
+            class="visiting-card card-front"
+          >
 
-            <!-- Institute Logo -->
+            <div class="front-navy"></div>
+            <div class="front-gold"></div>
+
             <div class="front-logo">
+
               ${
                 logo?
-                `<img
-                  src="${safeAttr(logo)}"
-                  alt="Institute logo"
-                  onerror="imageFallback(this)"
-                >`:
-                `<span>
-                  ${escapeHtml(
-                    initials(
-                      r.instituteName||
-                      r.name
-                    )
-                  )}
-                </span>`
-              }
-            </div>
 
-            <div class="front-content">
+                `
+                  <img
+                    src="${safeAttr(logo)}"
+                    alt="Institute logo"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"
+                  >
 
-              <h1>
-                ${escapeHtml(
-                  r.name||
-                  "Digital Card"
-                )}
-              </h1>
+                  <div
+                    class="front-logo-fallback"
+                    style="display:none"
+                  >
+                    ${escapeHtml(
+                      initials(
+                        r.instituteName||
+                        r.name
+                      )
+                    )}
+                  </div>
+                `
 
-              ${
-                r.instituteName?
-                `<strong>
-                  ${escapeHtml(
-                    r.instituteName
-                  )}
-                </strong>`:
-                ""
-              }
+                :
 
-              ${
-                r.title?
-                `<span>
-                  ${escapeHtml(
-                    r.title
-                  )}
-                </span>`:
-                ""
-              }
-
-              ${
-                website?
-                `<a
-                  href="${safeAttr(website)}"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  ${escapeHtml(
-                    r.website
-                  )}
-                </a>`:
-                ""
-              }
-
-              ${
-                photo?
-                `<img
-                  class="front-profile"
-                  src="${safeAttr(photo)}"
-                  alt=""
-                  onerror="imageFallback(this)"
-                >
-                <div
-                  class="profile-fallback"
-                >
-                  ${escapeHtml(
-                    initials(r.name)
-                  )}
-                </div>`:
-                `<div
-                  class="profile-fallback"
-                >
-                  ${escapeHtml(
-                    initials(r.name)
-                  )}
-                </div>`
+                `
+                  <div
+                    class="front-logo-fallback"
+                  >
+                    ${escapeHtml(
+                      initials(
+                        r.instituteName||
+                        r.name
+                      )
+                    )}
+                  </div>
+                `
               }
 
             </div>
 
             ${
-              r.address?
-              `<div class="address-strip">
-                <span>●</span>
-                ${escapeHtml(r.address)}
-              </div>`:
+              r.instituteName?
+
+              `
+                <div class="front-institute">
+                  ${escapeHtml(
+                    r.instituteName
+                  )}
+                </div>
+              `
+
+              :
+
               ""
             }
 
+            <div class="front-person">
+
+              <h1>
+                ${escapeHtml(
+                  r.name||
+                  "Your Name"
+                )}
+              </h1>
+
+              ${
+                r.title?
+
+                `
+                  <p>
+                    ${escapeHtml(
+                      r.title
+                    )}
+                  </p>
+                `
+
+                :
+
+                ""
+              }
+
+            </div>
+
+            ${
+              photo?
+
+              `
+                <img
+                  class="front-profile"
+                  src="${safeAttr(photo)}"
+                  alt=""
+                  onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"
+                >
+
+                <div
+                  class="front-profile-fallback"
+                  style="display:none"
+                >
+                  ${escapeHtml(
+                    initials(r.name)
+                  )}
+                </div>
+              `
+
+              :
+
+              `
+                <div
+                  class="front-profile-fallback"
+                >
+                  ${escapeHtml(
+                    initials(r.name)
+                  )}
+                </div>
+              `
+            }
+
+            <div class="front-bottom">
+
+              ${
+                r.website?
+
+                `
+                  <span>
+                    ${escapeHtml(
+                      r.website
+                    )}
+                  </span>
+                `
+
+                :
+
+                `
+                  <span>
+                    DIGITAL CARD
+                  </span>
+                `
+              }
+
+              ${
+                r.phone?
+
+                `
+                  <div
+                    class="front-divider"
+                  ></div>
+
+                  <span>
+                    ${escapeHtml(
+                      r.phone
+                    )}
+                  </span>
+                `
+
+                :
+
+                ""
+              }
+
+            </div>
+
           </article>
 
-          <article class="visiting-card card-back">
+          <!-- BACK -->
 
-            <div class="back-top">
+          <article
+            class="visiting-card card-back"
+          >
+
+            <div class="back-gold"></div>
+
+            <div class="back-name">
+
+              <h2>
+                ${escapeHtml(
+                  r.name||
+                  "Your Name"
+                )}
+              </h2>
+
+              ${
+                r.title?
+
+                `
+                  <p>
+                    ${escapeHtml(
+                      r.title
+                    )}
+                  </p>
+                `
+
+                :
+
+                ""
+              }
+
+            </div>
+
+            <button
+              id="responseQr"
+              class="back-qr"
+              type="button"
+              aria-label="Open viewer response form"
+            >
+
+              <span
+                id="responseQrCode"
+                class="qr"
+              ></span>
+
+            </button>
+
+            <div class="back-contact">
+
+              ${
+                r.instituteName?
+
+                `
+                  <h3>
+                    ${escapeHtml(
+                      r.instituteName
+                    )}
+                  </h3>
+                `
+
+                :
+
+                ""
+              }
+
+              <p>
+
+                ${
+                  r.address?
+
+                  `
+                    ${escapeHtml(
+                      r.address
+                    )}
+                    <br>
+                  `
+
+                  :
+
+                  ""
+                }
+
+                ${
+                  r.phone?
+
+                  `
+                    ${escapeHtml(
+                      r.phone
+                    )}
+                    <br>
+                  `
+
+                  :
+
+                  ""
+                }
+
+                ${
+                  emails.length?
+
+                  `
+                    ${escapeHtml(
+                      emails[0]
+                    )}
+                    <br>
+                  `
+
+                  :
+
+                  ""
+                }
+
+                ${
+                  r.website?
+
+                  `
+                    <a
+                      href="${safeAttr(
+                        website
+                      )}"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      ${escapeHtml(
+                        r.website
+                      )}
+                    </a>
+                  `
+
+                  :
+
+                  ""
+                }
+
+              </p>
+
+            </div>
+
+            <div class="back-gold-bottom">
 
               <span>
-                ABOUT
+                DIGITAL
               </span>
 
-              <strong>
-                ${escapeHtml(
-                  r.instituteName||
-                  ""
-                )}
-              </strong>
+              <span>|</span>
 
-            </div>
+              <span>
+                CONNECT
+              </span>
 
-            <div class="back-main">
+              <span>|</span>
 
-              <div>
+              <span>
+                SHARE
+              </span>
 
-                <h2>
-                  ${escapeHtml(
-                    r.name||
-                    "Digital Visiting Card"
-                  )}
-                </h2>
-
-                <p>
-                  ${escapeHtml(
-                    description||
-                    "Connect with this card owner using the details below."
-                  )}
-                </p>
-
-              </div>
-
-              <div class="response-qr-area">
-
-                <button
-                  id="responseQr"
-                  class="response-qr-button"
-                  type="button"
-                  aria-label="Open viewer response form"
-                >
-                  <span
-                    id="responseQrCode"
-                    class="qr"
-                  ></span>
-                </button>
-
-                <div>
-
-                  <strong>
-                    Connect with this card
-                  </strong>
-
-                  <p>
-                    Scan this QR code to share
-                    your details with the card owner.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <div class="back-note">
-              Tap the card to return
             </div>
 
           </article>
@@ -407,63 +629,79 @@ function renderCard(){
 
         ${
           r.phone?
+
           actionLink(
             "phone",
             telHref(r.phone),
             "Call"
           ):
+
           ""
         }
 
         ${
           r.whatsapp?
+
           actionLink(
             "whatsapp",
-            "https://wa.me/"+digits(r.whatsapp),
+            "https://wa.me/"+
+            digits(r.whatsapp),
             "WhatsApp"
           ):
+
           ""
         }
 
         ${
           emails.length?
+
           actionLink(
             "email",
             emails.length>1?
             "#":
-            "mailto:"+emails[0],
+            "mailto:"+
+            emails[0],
             "Email"
           ):
+
           ""
         }
 
         ${
           website?
+
           actionLink(
             "website",
             website,
             "Website"
           ):
+
           ""
         }
 
         ${
-          map?
+          r.locationLink?
+
           actionLink(
             "map",
-            map,
+            directionsUrl(
+              r.locationLink
+            ),
             "Maps"
           ):
+
           ""
         }
 
         ${
           links.length?
+
           actionLink(
             "more",
             "#",
             "More"
           ):
+
           ""
         }
 
@@ -504,95 +742,123 @@ function renderCard(){
 
     ${
       emails.length>1?
-      `<div
-        id="emailPicker"
-        class="modal hidden"
-      >
-        <div class="modal-box">
 
-          <h3>
-            Select email
-          </h3>
+      `
+        <div
+          id="emailPicker"
+          class="modal hidden"
+        >
 
-          ${
-            emails.map(email=>`
-              <a
-                href="mailto:${safeAttr(email)}"
-              >
-                ${escapeHtml(email)}
-              </a>
-            `).join("")
-          }
+          <div class="modal-box">
 
-          <button
-            id="closeEmailPicker"
-            type="button"
-          >
-            Close
-          </button>
+            <h3>
+              Select email
+            </h3>
+
+            ${
+              emails.map(
+                email=>`
+                  <a
+                    href="mailto:${safeAttr(email)}"
+                  >
+                    ${escapeHtml(
+                      email
+                    )}
+                  </a>
+                `
+              ).join("")
+            }
+
+            <button
+              id="closeEmailPicker"
+              type="button"
+            >
+              Close
+            </button>
+
+          </div>
 
         </div>
-      </div>`:
+      `:
+
       ""
     }
 
     ${
       links.length?
-      `<div
-        id="linksPicker"
-        class="modal hidden"
-      >
-        <div class="modal-box">
 
-          <h3>
-            Select link
-          </h3>
+      `
+        <div
+          id="linksPicker"
+          class="modal hidden"
+        >
 
-          ${
-            links.map(link=>`
-              <a
-                href="${safeAttr(
-                  normalizeWebsite(
-                    link.url||"#"
-                  )
-                )}"
-                target="_blank"
-                rel="noopener"
-              >
-                ${escapeHtml(
-                  link.label||
-                  link.url||
-                  "Link"
-                )}
-              </a>
-            `).join("")
-          }
+          <div class="modal-box">
 
-          <button
-            id="closeLinksPicker"
-            type="button"
-          >
-            Close
-          </button>
+            <h3>
+              Select link
+            </h3>
+
+            ${
+              links.map(
+                link=>`
+
+                  <a
+                    href="${safeAttr(
+                      normalizeWebsite(
+                        link.url||
+                        "#"
+                      )
+                    )}"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    ${escapeHtml(
+                      link.label||
+                      link.url||
+                      "Link"
+                    )}
+                  </a>
+
+                `
+              ).join("")
+            }
+
+            <button
+              id="closeLinksPicker"
+              type="button"
+            >
+              Close
+            </button>
+
+          </div>
 
         </div>
-      </div>`:
+      `:
+
       ""
     }
   `;
 
   setupInteractions();
 
-  renderQrCodes(r.guid);
+  renderResponseQr(
+    r.guid
+  );
 }
 
 function setupInteractions(){
-  const stage=$("cardStage");
-  const select=$("cardSelect");
+
+  const stage=
+    $("cardStage");
+
+  const select=
+    $("cardSelect");
 
   stage.addEventListener(
     "click",
     event=>{
+
       if(
         event.target.closest(
           "a,button,select,input"
@@ -608,11 +874,14 @@ function setupInteractions(){
   stage.addEventListener(
     "keydown",
     event=>{
+
       if(
         event.key==="Enter"||
         event.key===" "
       ){
+
         event.preventDefault();
+
         flipCard();
       }
     }
@@ -621,7 +890,9 @@ function setupInteractions(){
   select?.addEventListener(
     "change",
     ()=>{
+
       if(select.value){
+
         location.href=
           "?guid="+
           encodeURIComponent(
@@ -635,79 +906,102 @@ function setupInteractions(){
     .querySelectorAll(
       '.social-action[aria-label="Email"]'
     )
-    .forEach(button=>{
-      button.addEventListener(
-        "click",
-        event=>{
-          if(
-            button.getAttribute(
-              "href"
-            )==="#"
-          ){
-            event.preventDefault();
+    .forEach(
+      button=>{
 
-            $("emailPicker")
-              ?.classList
-              .remove("hidden");
+        button.addEventListener(
+          "click",
+          event=>{
+
+            if(
+              button.getAttribute(
+                "href"
+              )==="#"
+            ){
+
+              event.preventDefault();
+
+              $("emailPicker")
+                ?.classList
+                .remove(
+                  "hidden"
+                );
+            }
           }
-        }
-      );
-    });
+        );
+      }
+    );
 
   document
     .querySelectorAll(
       '.social-action[aria-label="More"]'
     )
-    .forEach(button=>{
-      button.addEventListener(
-        "click",
-        event=>{
-          event.preventDefault();
+    .forEach(
+      button=>{
 
-          $("linksPicker")
-            ?.classList
-            .remove("hidden");
-        }
-      );
-    });
+        button.addEventListener(
+          "click",
+          event=>{
+
+            event.preventDefault();
+
+            $("linksPicker")
+              ?.classList
+              .remove(
+                "hidden"
+              );
+          }
+        );
+      }
+    );
 
   $("closeEmailPicker")
     ?.addEventListener(
       "click",
-      ()=>$("emailPicker")
-        ?.classList
-        .add("hidden")
+      ()=>
+        $("emailPicker")
+          ?.classList
+          .add("hidden")
     );
 
   $("closeLinksPicker")
     ?.addEventListener(
       "click",
-      ()=>$("linksPicker")
-        ?.classList
-        .add("hidden")
+      ()=>
+        $("linksPicker")
+          ?.classList
+          .add("hidden")
     );
 
   document
     .querySelectorAll(".modal")
-    .forEach(modal=>{
-      modal.addEventListener(
-        "click",
-        event=>{
-          if(
-            event.target===modal
-          ){
-            modal.classList.add(
-              "hidden"
-            );
+    .forEach(
+      modal=>{
+
+        modal.addEventListener(
+          "click",
+          event=>{
+
+            if(
+              event.target===
+              modal
+            ){
+              modal.classList.add(
+                "hidden"
+              );
+            }
+
           }
-        }
-      );
-    });
+        );
+
+      }
+    );
 
   $("responseQr")
     ?.addEventListener(
       "click",
       event=>{
+
         event.stopPropagation();
 
         location.href=
@@ -728,11 +1022,10 @@ function setupInteractions(){
   $("saveContact")
     ?.addEventListener(
       "click",
-      ()=>{
+      ()=>
         downloadVCard(
           currentCard
-        );
-      }
+        )
     );
 
   $("saveCard")
@@ -743,6 +1036,7 @@ function setupInteractions(){
 }
 
 function flipCard(){
+
   flipped=!flipped;
 
   $("cardInner")
@@ -753,11 +1047,534 @@ function flipCard(){
     );
 }
 
+function renderResponseQr(
+  guid
+){
+
+  const qr=
+    $("responseQrCode");
+
+  if(
+    !qr||
+    !guid||
+    typeof QRCode===
+    "undefined"
+  ){
+    return;
+  }
+
+  qr.innerHTML="";
+
+  new QRCode(
+    qr,
+    {
+      text:
+        CONFIG.FRONTEND_BASE_URL+
+        "viewer/?guid="+
+        encodeURIComponent(
+          guid
+        ),
+
+      width:160,
+      height:160,
+
+      colorDark:"#062442",
+      colorLight:"#ffffff",
+
+      correctLevel:
+        QRCode.CorrectLevel.H
+    }
+  );
+}
+
+async function shareCard(){
+
+  try{
+
+    if(
+      navigator.share
+    ){
+
+      await navigator.share({
+        title:
+          currentCard.name||
+          "Digital Visiting Card",
+
+        text:
+          "Digital visiting card of "+
+          (
+            currentCard.name||
+            "this person"
+          ),
+
+        url:location.href
+      });
+
+      return;
+    }
+
+    await navigator.clipboard.writeText(
+      location.href
+    );
+
+    showToast(
+      "Card link copied."
+    );
+
+  }catch(error){
+
+    if(
+      error.name!=="AbortError"
+    ){
+
+      showToast(
+        "Unable to share card.",
+        true
+      );
+    }
+  }
+}
+
+function saveCardLocally(){
+
+  const key=
+    "digitalVisitingSavedCards";
+
+  let cards=[];
+
+  try{
+
+    cards=
+      JSON.parse(
+        localStorage.getItem(
+          key
+        )||
+        "[]"
+      );
+
+  }catch(error){}
+
+  if(
+    !Array.isArray(cards)
+  ){
+    cards=[];
+  }
+
+  if(
+    !cards.some(
+      card=>
+        card.guid===
+        currentCard.guid
+    )
+  ){
+
+    cards.push({
+      guid:
+        currentCard.guid,
+
+      name:
+        currentCard.name||
+        "",
+
+      savedAt:
+        new Date().toISOString()
+    });
+
+    localStorage.setItem(
+      key,
+      JSON.stringify(cards)
+    );
+
+    showToast(
+      "Card saved."
+    );
+
+  }else{
+
+    showToast(
+      "Card is already saved."
+    );
+  }
+}
+
+function downloadVCard(
+  card
+){
+
+  const name=
+    String(
+      card.name||
+      "Contact"
+    )
+    .replace(
+      /[^\w\s.-]/g,
+      ""
+    )
+    .trim()||
+    "Contact";
+
+  const lines=[
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    "FN:"+
+      escapeVCard(
+        card.name||
+        ""
+      ),
+    "TITLE:"+
+      escapeVCard(
+        card.title||
+        ""
+      )
+  ];
+
+  if(card.phone){
+
+    lines.push(
+      "TEL;TYPE=CELL:"+
+      escapeVCard(
+        card.phone
+      )
+    );
+  }
+
+  if(card.whatsapp){
+
+    lines.push(
+      "TEL;TYPE=WORK:"+
+      escapeVCard(
+        card.whatsapp
+      )
+    );
+  }
+
+  String(
+    card.emails||
+    ""
+  )
+  .split(",")
+  .map(
+    x=>x.trim()
+  )
+  .filter(Boolean)
+  .forEach(
+    email=>{
+      lines.push(
+        "EMAIL:"+
+        escapeVCard(
+          email
+        )
+      );
+    }
+  );
+
+  if(card.website){
+
+    lines.push(
+      "URL:"+
+      escapeVCard(
+        card.website
+      )
+    );
+  }
+
+  if(card.address){
+
+    lines.push(
+      "ADR:;;"+
+      escapeVCard(
+        card.address
+      )
+    );
+  }
+
+  if(card.instituteName){
+
+    lines.push(
+      "ORG:"+
+      escapeVCard(
+        card.instituteName
+      )
+    );
+  }
+
+  lines.push(
+    "END:VCARD"
+  );
+
+  const url=
+    URL.createObjectURL(
+      new Blob(
+        [
+          lines.join(
+            "\r\n"
+          )
+        ],
+        {
+          type:
+            "text/vcard;charset=utf-8"
+        }
+      )
+    );
+
+  const link=
+    document.createElement(
+      "a"
+    );
+
+  link.href=url;
+
+  link.download=
+    name+".vcf";
+
+  document.body.appendChild(
+    link
+  );
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(
+    ()=>
+      URL.revokeObjectURL(
+        url
+      ),
+    1000
+  );
+}
+
+function escapeVCard(
+  value
+){
+
+  return String(
+    value||
+    ""
+  )
+  .replace(
+    /\\/g,
+    "\\\\"
+  )
+  .replace(
+    /\n/g,
+    "\\n"
+  )
+  .replace(
+    /;/g,
+    "\\;"
+  )
+  .replace(
+    /,/g,
+    "\\,"
+  );
+}
+
+function driveImageUrl(
+  value
+){
+
+  const url=
+    String(
+      value||
+      ""
+    ).trim();
+
+  if(!url){
+    return "";
+  }
+
+  const match=
+    url.match(
+      /[?&]id=([^&]+)/i
+    )||
+    url.match(
+      /\/d\/([^/]+)/i
+    );
+
+  if(
+    match&&
+    match[1]&&
+    url.includes(
+      "drive.google.com"
+    )
+  ){
+
+    return(
+      "https://drive.google.com/thumbnail?id="+
+      encodeURIComponent(
+        match[1]
+      )+
+      "&sz=w1200"
+    );
+  }
+
+  return url;
+}
+
+function directionsUrl(
+  value
+){
+
+  try{
+
+    const url=
+      new URL(
+        String(value||"")
+      );
+
+    const query=
+      url.searchParams.get(
+        "query"
+      )||
+      url.searchParams.get(
+        "q"
+      );
+
+    return query?
+
+      "https://www.google.com/maps/dir/?api=1&destination="+
+      encodeURIComponent(
+        query
+      ):
+
+      String(value||"");
+
+  }catch(error){
+
+    return String(
+      value||
+      ""
+    );
+  }
+}
+
+function normalizeWebsite(
+  value
+){
+
+  let v=
+    String(
+      value||
+      ""
+    )
+    .trim()
+    .replace(
+      /^(https?:\/\/)+/i,
+      "https://"
+    );
+
+  return(
+    v&&
+    !/^https?:\/\//i.test(v)
+  )?
+
+    "https://"+
+    v:
+
+    v;
+}
+
+function telHref(
+  value
+){
+
+  return(
+    "tel:"+
+    String(
+      value||
+      ""
+    )
+    .replace(
+      /[^\d+]/g,
+      ""
+    )
+  );
+}
+
+function digits(
+  value
+){
+
+  return String(
+    value||
+    ""
+  ).replace(
+    /\D/g,
+    ""
+  );
+}
+
+function parseLinks(
+  value
+){
+
+  if(
+    Array.isArray(value)
+  ){
+    return value;
+  }
+
+  if(!value){
+    return[];
+  }
+
+  try{
+
+    const parsed=
+      JSON.parse(
+        value
+      );
+
+    return Array.isArray(
+      parsed
+    )?
+      parsed:
+      [];
+
+  }catch(error){
+
+    return[];
+  }
+}
+
+function initials(
+  name
+){
+
+  const words=
+    String(
+      name||
+      ""
+    )
+    .trim()
+    .split(
+      /\s+/
+    )
+    .filter(Boolean);
+
+  if(!words.length){
+    return"VC";
+  }
+
+  return words.length===1?
+
+    words[0]
+      .slice(0,2)
+      .toUpperCase():
+
+    (
+      words[0][0]+
+      words.at(-1)[0]
+    ).toUpperCase();
+}
+
 function actionLink(
   type,
   url,
   label
 ){
+
   return`
     <a
       class="social-action"
@@ -770,7 +1587,10 @@ function actionLink(
   `;
 }
 
-function icon(type){
+function icon(
+  type
+){
+
   const icons={
 
     phone:`
@@ -838,441 +1658,19 @@ function icon(type){
     `
   };
 
-  return icons[type]||"";
-}
-
-function renderQrCodes(guid){
-  if(
-    !guid||
-    typeof QRCode==="undefined"
-  ){
-    return;
-  }
-
-  const responseQr=
-    $("responseQrCode");
-
-  if(!responseQr)return;
-
-  responseQr.innerHTML="";
-
-  new QRCode(
-    responseQr,
-    {
-      text:
-        CONFIG.FRONTEND_BASE_URL+
-        "viewer/?guid="+
-        encodeURIComponent(guid),
-
-      width:160,
-      height:160,
-
-      colorDark:"#0f766e",
-      colorLight:"#ffffff",
-
-      correctLevel:
-        QRCode.CorrectLevel.H
-    }
-  );
-}
-
-async function shareCard(){
-  try{
-    if(navigator.share){
-      await navigator.share({
-        title:
-          currentCard.name||
-          "Digital Visiting Card",
-
-        text:
-          "Digital visiting card of "+
-          (
-            currentCard.name||
-            "this person"
-          ),
-
-        url:location.href
-      });
-
-      return;
-    }
-
-    await navigator.clipboard.writeText(
-      location.href
-    );
-
-    showToast(
-      "Card link copied."
-    );
-
-  }catch(error){
-
-    if(
-      error.name!=="AbortError"
-    ){
-      showToast(
-        "Unable to share card.",
-        true
-      );
-    }
-  }
-}
-
-function saveCardLocally(){
-  const key=
-    "digitalVisitingSavedCards";
-
-  let cards=[];
-
-  try{
-    cards=JSON.parse(
-      localStorage.getItem(key)||
-      "[]"
-    );
-  }catch(e){}
-
-  if(!Array.isArray(cards)){
-    cards=[];
-  }
-
-  if(
-    !cards.some(
-      card=>
-        card.guid===
-        currentCard.guid
-    )
-  ){
-    cards.push({
-      guid:currentCard.guid,
-      name:currentCard.name||"",
-      savedAt:
-        new Date().toISOString()
-    });
-
-    localStorage.setItem(
-      key,
-      JSON.stringify(cards)
-    );
-
-    showToast(
-      "Card saved."
-    );
-
-  }else{
-    showToast(
-      "Card is already saved."
-    );
-  }
-}
-
-function downloadVCard(card){
-  const name=
-    String(
-      card.name||
-      "Contact"
-    )
-    .replace(
-      /[^\w\s.-]/g,
-      ""
-    )
-    .trim()||
-    "Contact";
-
-  const lines=[
-    "BEGIN:VCARD",
-    "VERSION:3.0",
-    "FN:"+
-      escapeVCard(
-        card.name||""
-      ),
-    "TITLE:"+
-      escapeVCard(
-        card.title||""
-      )
-  ];
-
-  if(card.phone){
-    lines.push(
-      "TEL;TYPE=CELL:"+
-      escapeVCard(
-        card.phone
-      )
-    );
-  }
-
-  if(card.whatsapp){
-    lines.push(
-      "TEL;TYPE=WORK:"+
-      escapeVCard(
-        card.whatsapp
-      )
-    );
-  }
-
-  String(
-    card.emails||""
-  )
-  .split(",")
-  .map(x=>x.trim())
-  .filter(Boolean)
-  .forEach(
-    email=>{
-      lines.push(
-        "EMAIL:"+
-        escapeVCard(email)
-      );
-    }
-  );
-
-  if(card.website){
-    lines.push(
-      "URL:"+
-      escapeVCard(
-        card.website
-      )
-    );
-  }
-
-  if(card.address){
-    lines.push(
-      "ADR:;;"+
-      escapeVCard(
-        card.address
-      )
-    );
-  }
-
-  if(card.instituteName){
-    lines.push(
-      "ORG:"+
-      escapeVCard(
-        card.instituteName
-      )
-    );
-  }
-
-  lines.push(
-    "END:VCARD"
-  );
-
-  const url=
-    URL.createObjectURL(
-      new Blob(
-        [
-          lines.join("\r\n")
-        ],
-        {
-          type:
-            "text/vcard;charset=utf-8"
-        }
-      )
-    );
-
-  const link=
-    document.createElement("a");
-
-  link.href=url;
-  link.download=
-    name+".vcf";
-
-  document.body.appendChild(
-    link
-  );
-
-  link.click();
-
-  link.remove();
-
-  setTimeout(
-    ()=>{
-      URL.revokeObjectURL(
-        url
-      );
-    },
-    1000
-  );
-}
-
-function escapeVCard(value){
-  return String(
-    value||""
-  )
-  .replace(
-    /\\/g,
-    "\\\\"
-  )
-  .replace(
-    /\n/g,
-    "\\n"
-  )
-  .replace(
-    /;/g,
-    "\\;"
-  )
-  .replace(
-    /,/g,
-    "\\,"
-  );
-}
-
-function driveImageUrl(value){
-  const url=
-    String(value||"")
-      .trim();
-
-  if(!url){
-    return "";
-  }
-
-  const match=
-    url.match(
-      /[?&]id=([^&]+)/i
-    )||
-    url.match(
-      /\/d\/([^/]+)/i
-    );
-
-  if(
-    match&&
-    match[1]&&
-    url.includes(
-      "drive.google.com"
-    )
-  ){
-    return(
-      "https://drive.google.com/thumbnail?id="+
-      encodeURIComponent(
-        match[1]
-      )+
-      "&sz=w1200"
-    );
-  }
-
-  return url;
-}
-
-function imageFallback(image){
-  if(!image)return;
-
-  image.style.display="none";
-
-  const fallback=
-    image.parentElement
-      ?.querySelector(
-        ".profile-fallback,.front-logo span"
-      );
-
-  if(fallback){
-    fallback.style.display="grid";
-  }
-}
-
-function directionsUrl(value){
-  try{
-    const url=
-      new URL(
-        String(value||"")
-      );
-
-    const query=
-      url.searchParams.get(
-        "query"
-      )||
-      url.searchParams.get(
-        "q"
-      );
-
-    return query?
-      "https://www.google.com/maps/dir/?api=1&destination="+
-      encodeURIComponent(query):
-      String(value||"");
-
-  }catch(e){
-    return String(value||"");
-  }
-}
-
-function normalizeWebsite(value){
-  let v=
-    String(value||"")
-      .trim()
-      .replace(
-        /^(https?:\/\/)+/i,
-        "https://"
-      );
-
-  return v&&
-    !/^https?:\/\//i.test(v)?
-    "https://"+v:
-    v;
-}
-
-function telHref(value){
   return(
-    "tel:"+
-    String(value)
-      .replace(
-        /[^\d+]/g,
-        ""
-      )
-  );
-}
-
-function digits(value){
-  return String(
-    value||""
-  ).replace(
-    /\D/g,
+    icons[type]||
     ""
   );
 }
 
-function parseLinks(value){
-  if(Array.isArray(value)){
-    return value;
-  }
+function escapeHtml(
+  value
+){
 
-  if(!value){
-    return [];
-  }
-
-  try{
-    const parsed=
-      JSON.parse(value);
-
-    return Array.isArray(parsed)?
-      parsed:
-      [];
-
-  }catch(e){
-    return [];
-  }
-}
-
-function initials(name){
-  const words=
-    String(name||"")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-
-  if(!words.length){
-    return "VC";
-  }
-
-  return words.length===1?
-    words[0]
-      .slice(0,2)
-      .toUpperCase():
-    (
-      words[0][0]+
-      words.at(-1)[0]
-    ).toUpperCase();
-}
-
-function escapeHtml(value){
   return String(
-    value??""
+    value??
+    ""
   )
   .replace(
     /&/g,
@@ -1296,14 +1694,20 @@ function escapeHtml(value){
   );
 }
 
-function safeAttr(value){
-  return escapeHtml(value);
+function safeAttr(
+  value
+){
+
+  return escapeHtml(
+    value
+  );
 }
 
 function showToast(
   message,
   error=false
 ){
+
   const toast=
     $("toast");
 
@@ -1324,19 +1728,22 @@ function showToast(
 
   showToast.timer=
     setTimeout(
-      ()=>{
+      ()=>
         toast.className=
-          "toast";
-      },
+          "toast",
       2600
     );
 }
 
-function showError(message){
+function showError(
+  message
+){
+
   $("app").className=
     "error-page";
 
   $("app").innerHTML=`
+
     <div class="error-box">
 
       <a
@@ -1358,5 +1765,6 @@ function showError(message){
       </p>
 
     </div>
+
   `;
 }
