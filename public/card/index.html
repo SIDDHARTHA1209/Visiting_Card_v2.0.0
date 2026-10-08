@@ -3,14 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#061f3d">
 <title>Digital Visiting Card</title>
-<link rel="stylesheet" href="style.css?v=2300">
+<link rel="stylesheet" href="style.css?v=2600">
 </head>
 <body>
-<main id="app" class="loading"><div class="loading-box"><div class="spinner"></div><p>Loading card...</p></div></main>
-<div id="toast" class="toast"></div>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="script.js?v=2300"></script>
+
+<main id="app" class="loading">
+
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p>Loading digital card...</p>
+  </div>
+
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="script.js?v=2600"></script>
+
 </body>
 </html>
