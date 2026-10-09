@@ -302,12 +302,71 @@ small{
 .upload-box{
 	display:flex;
 	flex-direction:column;
-	gap:9px;
-	min-height:145px;
-	padding:14px;
+	align-items:flex-start;
+	gap:7px;
+	align-self:start;
+	min-height:0;
+	padding:10px;
 	border:1px dashed #c9c3b7;
-	border-radius:12px;
+	border-radius:10px;
 	background:#f4f1e9;
+}
+
+.upload-box>label{
+	display:block;
+}
+
+.image-upload-button{
+	display:grid;
+	width:42px;
+	height:42px;
+	padding:0;
+	place-items:center;
+	border:1px solid #d2cdc1;
+	border-radius:9px;
+	background:#e7e3d9;
+	color:var(--primary);
+	transition:background .2s,border-color .2s,transform .15s;
+}
+
+.image-upload-button:hover{
+	border-color:var(--primary);
+	background:#d9f1ed;
+	transform:translateY(-1px);
+}
+
+.image-upload-button:active{
+	transform:translateY(0);
+}
+
+.image-upload-button svg{
+	width:21px;
+	height:21px;
+	fill:none;
+	stroke:currentColor;
+	stroke-width:1.8;
+	stroke-linecap:round;
+	stroke-linejoin:round;
+}
+
+.preview{
+	display:block;
+	width:65px;
+	height:65px;
+	object-fit:cover;
+	border:1px solid #d0cabe;
+	border-radius:8px;
+	background:#e6e2d8;
+}
+
+.profile-upload{
+	min-height:0;
+}
+
+.profile-upload .preview{
+	width:80px;
+	height:80px;
+	border-radius:50%;
 }
 
 .upload-box>label{
@@ -722,7 +781,7 @@ small{
 	}
 
 	.upload-box{
-		min-height:140px;
+		min-height:0;
 	}
 
 	.location-map-container{
