@@ -1,4 +1,4 @@
-const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbz5gpC6_-LX0Q4E1r-DTkIVilTLZgoENzrJlzEvx9iY-dxACnGqPZLelcqkxETA-NcWhA/exec"};
+const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbwHNQCppL_cY_xrL44_IKwzFxbEq6mQrSgS6in1wZfO1HrcT0jiTuVVtfehrhtwzDPeiw/exec"};
 const $=id=>document.getElementById(id);
 let card=null;
 document.addEventListener("DOMContentLoaded",load);
