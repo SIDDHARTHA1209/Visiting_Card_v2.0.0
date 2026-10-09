@@ -810,3 +810,83 @@ small{
 		max-width:calc(100vw - 20px);
 	}
 }
+
+
+/* Profile photo upload icon */
+#photoAddButton {
+	background: #e8f2ff;
+	border-color: #c7dcfa;
+	color: #3478c8;
+}
+
+#photoAddButton:hover {
+	background: #d8e9ff;
+	border-color: #8bb8ef;
+}
+
+/* Institute logo upload icon */
+#logoAddButton {
+	background: #fff2dc;
+	border-color: #f0d6a5;
+	color: #b77924;
+}
+
+#logoAddButton:hover {
+	background: #ffe8bf;
+	border-color: #e4bd76;
+}
+
+/* Keep upload boxes compact */
+.upload-box {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	align-self: start;
+	min-height: 0;
+	padding: 10px;
+	border: 1px dashed #c9c3b7;
+	border-radius: 10px;
+	background: #f7f5ef;
+}
+
+/* Keep the upload icons easy to recognize */
+.image-upload-button {
+	display: grid;
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	place-items: center;
+	border: 1px solid;
+	border-radius: 9px;
+	cursor: pointer;
+	transition: background .2s, border-color .2s;
+}
+
+.image-upload-button svg {
+	width: 22px;
+	height: 22px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Uploaded image preview */
+.preview {
+	display: block;
+	width: 65px;
+	height: 65px;
+	object-fit: cover;
+	border: 1px solid #d0cabe;
+	border-radius: 8px;
+	background: #e6e2d8;
+}
+
+/* Profile photos use a circular preview */
+.profile-upload .preview {
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+}
