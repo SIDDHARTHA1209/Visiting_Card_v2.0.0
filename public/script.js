@@ -1,5 +1,5 @@
 const CONFIG={
-  API_URL:"https://script.google.com/macros/s/AKfycbz5gpC6_-LX0Q4E1r-DTkIVilTLZgoENzrJlzEvx9iY-dxACnGqPZLelcqkxETA-NcWhA/exec",
+  API_URL:"https://script.google.com/macros/s/AKfycbwHNQCppL_cY_xrL44_IKwzFxbEq6mQrSgS6in1wZfO1HrcT0jiTuVVtfehrhtwzDPeiw/exec",
   FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/"
 };
 
