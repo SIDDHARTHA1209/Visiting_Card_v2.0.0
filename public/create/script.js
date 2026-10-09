@@ -815,3 +815,72 @@ function escapeAttr(value){
 		.replace(/</g,"&lt;")
 		.replace(/>/g,"&gt;");
 }
+
+/* IMAGE PREVIEW AND REMOVE CONTROLS */
+
+document.addEventListener("DOMContentLoaded", function () {
+	const images = [
+		{
+			input: "photo",
+			preview: "photoPreview",
+			wrapper: "photoPreviewWrap",
+			remove: "photoRemoveButton",
+			meta: "photoMeta",
+			defaultText: "Kindly add the profile photo."
+		},
+		{
+			input: "logo",
+			preview: "logoPreview",
+			wrapper: "logoPreviewWrap",
+			remove: "logoRemoveButton",
+			meta: "logoMeta",
+			defaultText: "Kindly add the institution/organization logo."
+		}
+	];
+
+	images.forEach(function (item) {
+		const input = document.getElementById(item.input);
+		const preview = document.getElementById(item.preview);
+		const wrapper = document.getElementById(item.wrapper);
+		const remove = document.getElementById(item.remove);
+		const meta = document.getElementById(item.meta);
+
+		if (!input || !preview || !wrapper || !remove) return;
+
+		function updatePreviewState() {
+			const hasImage =
+				!preview.classList.contains("hidden") &&
+				Boolean(preview.getAttribute("src"));
+
+			wrapper.classList.toggle("has-image", hasImage);
+			remove.classList.toggle("hidden", !hasImage);
+		}
+
+		const observer = new MutationObserver(updatePreviewState);
+
+		observer.observe(preview, {
+			attributes: true,
+			attributeFilter: ["src", "class"]
+		});
+
+		input.addEventListener("change", function () {
+			updatePreviewState();
+		});
+
+		remove.addEventListener("click", function () {
+			input.value = "";
+			preview.removeAttribute("src");
+			preview.classList.add("hidden");
+			wrapper.classList.remove("has-image");
+			remove.classList.add("hidden");
+
+			if (meta) {
+				meta.textContent = item.defaultText;
+			}
+
+			input.dispatchEvent(new Event("change", { bubbles: true }));
+		});
+
+		updatePreviewState();
+	});
+});
