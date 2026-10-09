@@ -1,17 +1,20 @@
+/* =========================================
+   1. THEME AND GLOBAL STYLES
+========================================= */
 
 :root {
 	--primary: #0f766e;
 	--primary-dark: #115e59;
 	--primary-light: #d9f1ed;
-	--text: #252820;
-	--muted: #77796f;
-	--surface: #ffffff;
-	--page-bg: #f3f2ec;
-	--border: #e2e0d7;
-	--field-bg: #fcfcfa;
+	--text: #202124;
+	--muted: #68665f;
+	--surface: #f4f0e6;
+	--page-bg: #111318;
+	--border: #d7d0c2;
+	--field-bg: #ebe6da;
 	--danger: #991b1b;
-	--shadow: 0 12px 35px rgba(30, 35, 25, 0.07);
 	--radius: 16px;
+	--shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
 }
 
 * {
@@ -56,6 +59,10 @@ svg {
 	display: none !important;
 }
 
+/* =========================================
+   2. PAGE CONTAINER
+========================================= */
+
 .page {
 	width: min(100% - 36px, 1050px);
 	margin: 0 auto;
@@ -67,25 +74,30 @@ svg {
 	align-items: center;
 	gap: 8px;
 	margin-bottom: 22px;
-	color: var(--primary);
+	color: #79d4c5;
 	font-size: 13px;
 	font-weight: 800;
 	text-decoration: none;
 }
 
 .back-home:hover {
-	color: var(--primary-dark);
+	color: #a1e6dc;
 }
+
+/* =========================================
+   3. PAGE HEADER
+========================================= */
+
 .hero {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 24px;
-	margin-bottom: 24px;
+	margin-bottom: 18px;
 	padding: 30px;
-	border: 1px solid #dfe9e3;
+	border: 1px solid var(--border);
 	border-radius: 18px;
-	background: linear-gradient(135deg, #ffffff 0%, #edf7f3 100%);
+	background: var(--surface);
 	box-shadow: var(--shadow);
 }
 
@@ -118,10 +130,20 @@ svg {
 	line-height: 1.7;
 }
 
+.install-button {
+	border-color: #a8d48f !important;
+	background: #d9f0c6 !important;
+	color: #202124 !important;
+}
+
+/* =========================================
+   4. FORM PANELS
+========================================= */
+
 #cardForm {
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	gap: 14px;
 }
 
 .panel {
@@ -130,7 +152,7 @@ svg {
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	background: var(--surface);
-	box-shadow: 0 5px 20px rgba(30, 35, 25, 0.035);
+	box-shadow: 0 5px 20px rgba(0, 0, 0, 0.035);
 }
 
 .section-head {
@@ -173,6 +195,10 @@ svg {
 	line-height: 1.6;
 }
 
+/* =========================================
+   5. INPUTS AND LABELS
+========================================= */
+
 .grid {
 	display: grid;
 	gap: 18px;
@@ -189,7 +215,7 @@ label {
 	gap: 8px;
 	min-width: 0;
 	margin-bottom: 18px;
-	color: #3a3b35;
+	color: #202124;
 	font-size: 12px;
 	font-weight: 800;
 }
@@ -210,8 +236,8 @@ textarea {
 	width: 100%;
 	min-width: 0;
 	padding: 12px 13px;
-	border: 1px solid #dcdad1;
-	border-radius: 9px;
+	border: 1px solid #d0c8b9;
+	border-radius: 10px;
 	outline: none;
 	background: var(--field-bg);
 	color: var(--text);
@@ -232,20 +258,20 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-	color: #a0a096;
+	color: #77766f;
 	font-weight: 400;
 }
 
 input:focus,
 textarea:focus {
 	border-color: var(--primary);
-	background: #ffffff;
+	background: #f8f5ed;
 	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
 }
 
 input[readonly] {
-	background: #e9f2ee;
-	color: #4c4a45;
+	background: #e2e9e2;
+	color: #454943;
 }
 
 small {
@@ -261,6 +287,10 @@ small {
 	font-size: 11px;
 	font-weight: 500;
 }
+
+/* =========================================
+   6. WHATSAPP SAME-AS-PHONE BUTTON
+========================================= */
 
 .field-group {
 	display: flex;
@@ -285,10 +315,10 @@ small {
 .same-number-button {
 	flex: 0 0 auto;
 	padding: 5px 9px;
-	border: 1px solid #c9c3b7;
+	border: 1px solid #d0c8b9;
 	border-radius: 7px;
-	background: #f1efe8;
-	color: #4c4a45;
+	background: #ebe6da;
+	color: #202124;
 	font-size: 10px;
 	font-weight: 800;
 	transition: background 0.2s, border-color 0.2s;
@@ -307,38 +337,59 @@ small {
 	background: #e2eee9;
 }
 
-.image-upload-grid {
+/* =========================================
+   7. DESKTOP IMAGE AND FIELD LAYOUTS
+========================================= */
+
+.organization-layout,
+.contact-layout {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.85fr);
 	align-items: stretch;
 	gap: 18px;
-	width: 100%;
+	min-width: 0;
 }
+
+.organization-fields,
+.contact-fields {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.organization-fields > label:last-child,
+.contact-fields > label:last-child {
+	margin-bottom: 18px;
+}
+
+/* =========================================
+   8. IMAGE UPLOAD BOXES
+========================================= */
 
 .upload-box {
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	gap: 13px;
+	gap: 12px;
 	min-width: 0;
-	min-height: 185px;
+	min-height: 100%;
 	margin: 0;
 	padding: 18px;
-	border: 1px dashed #c9cfc4;
+	border: 1px solid #d7d0c2;
 	border-radius: 12px;
-	background: #fafaf7;
+	background: #ebe6da;
 	transition: border-color 0.2s, background 0.2s;
 }
 
 .upload-box:hover {
 	border-color: #9abdb2;
-	background: #f7fbf8;
+	background: #e7e4d9;
 }
 
 .upload-box > label {
 	display: block;
 	margin: 0;
-	color: #343730;
+	color: #202124;
 	font-size: 12px;
 	font-weight: 850;
 	line-height: 1.5;
@@ -346,45 +397,52 @@ small {
 
 .upload-content {
 	display: flex;
+	flex: 1;
+	flex-direction: column;
 	align-items: center;
-	gap: 14px;
+	justify-content: center;
+	gap: 12px;
 	min-width: 0;
-	min-height: 80px;
+	text-align: center;
 }
 
 .upload-description {
 	display: flex;
-	flex: 1;
 	flex-direction: column;
 	gap: 4px;
 	min-width: 0;
 }
 
 .upload-description strong {
-	color: #3a3b35;
+	color: #202124;
 	font-size: 12px;
 	font-weight: 850;
 }
 
 .upload-description small {
-	max-width: 220px;
+	max-width: 230px;
 }
 
 .upload-meta {
 	min-height: 17px;
 	overflow-wrap: anywhere;
+	text-align: center;
 }
+
+/* =========================================
+   9. IMAGE UPLOAD BUTTONS
+========================================= */
 
 .image-upload-button {
 	display: grid;
-	flex: 0 0 48px;
-	width: 48px;
-	height: 48px;
+	flex: 0 0 90px;
+	width: 90px;
+	height: 90px;
 	padding: 0;
 	place-items: center;
 	border: 1px solid #d2cdc1;
-	border-radius: 11px;
-	background: #e7e3d9;
+	border-radius: 13px;
+	background: #f7f1e5;
 	color: var(--primary);
 	transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
@@ -398,8 +456,8 @@ small {
 }
 
 .image-upload-button svg {
-	width: 23px;
-	height: 23px;
+	width: 42px;
+	height: 42px;
 	fill: none;
 	stroke: currentColor;
 	stroke-width: 1.8;
@@ -407,12 +465,12 @@ small {
 	stroke-linejoin: round;
 }
 
-/* Profile Photo Button */
+/* Profile photo button */
 
 .photo-button {
-	border-color: #c7dcfa;
+	border-color: #a9d2ff;
 	background: #e8f2ff;
-	color: #3478c8;
+	color: #0879e8;
 }
 
 .photo-button:hover {
@@ -420,12 +478,12 @@ small {
 	background: #d8e9ff;
 }
 
-/* Organization Logo Button */
+/* Institute logo button */
 
 .logo-button {
-	border-color: #f0d6a5;
+	border-color: #f0c27d;
 	background: #fff2dc;
-	color: #b77924;
+	color: #e98712;
 }
 
 .logo-button:hover {
@@ -433,15 +491,28 @@ small {
 	background: #ffe8bf;
 }
 
+/* =========================================
+   10. IMAGE PREVIEWS AND REMOVE BUTTONS
+========================================= */
+
+.upload-preview-wrap {
+	position: relative;
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: flex-start;
+	justify-content: center;
+	max-width: 100%;
+}
+
 .preview {
 	display: block;
-	flex: 0 0 76px;
-	width: 76px;
-	height: 76px;
+	flex: 0 0 120px;
+	width: 120px;
+	height: 120px;
 	object-fit: cover;
 	border: 1px solid #d0cabe;
-	border-radius: 10px;
-	background: #eeede7;
+	border-radius: 12px;
+	background: #ffffff;
 }
 
 .profile-preview {
@@ -449,10 +520,46 @@ small {
 }
 
 .logo-preview {
-	border-radius: 10px;
+	padding: 5px;
+	border-radius: 12px;
 	background: #ffffff;
 	object-fit: contain;
 }
+
+.upload-preview-wrap.has-image .image-upload-button {
+	display: none;
+}
+
+.upload-preview-wrap:not(.has-image) .preview {
+	display: none;
+}
+
+.remove-image-button {
+	position: absolute;
+	top: -9px;
+	right: -9px;
+	display: grid;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	place-items: center;
+	border: 1px solid #f0b7b7;
+	border-radius: 50%;
+	background: #fff0f0;
+	color: #a52828;
+	font-size: 20px;
+	font-weight: 800;
+	line-height: 1;
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.remove-image-button:hover {
+	background: #ffe0e0;
+}
+
+/* =========================================
+   11. BUTTONS
+========================================= */
 
 .button {
 	display: inline-flex;
@@ -467,7 +574,7 @@ small {
 	font-weight: 850;
 	text-align: center;
 	white-space: nowrap;
-	transition: background 0.2s, border-color 0.2s, transform 0.15s, opacity 0.2s;
+	transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
 
 .button:hover {
@@ -494,19 +601,22 @@ small {
 }
 
 .button.secondary {
-	border-color: #d2cdc1;
-	background: #f1efe8;
-	color: #343730;
+	border-color: #d0c8b9;
+	background: #ebe6da;
+	color: #202124;
 }
 
 .button.secondary:hover {
-	border-color: #bdb7aa;
-	background: #e8e5dc;
+	background: #dfd9cc;
 }
 
 .add-link-button {
 	margin-top: 5px;
 }
+
+/* =========================================
+   12. LOCATION
+========================================= */
 
 .location-row {
 	display: grid;
@@ -524,6 +634,8 @@ small {
 	margin-top: 9px;
 	overflow-wrap: anywhere;
 }
+
+/* Location modal */
 
 .location-map-container {
 	position: fixed;
@@ -548,6 +660,7 @@ small {
 	border: 1px solid rgba(255, 255, 255, 0.2);
 	border-radius: 14px;
 	background: var(--surface);
+	color: var(--text);
 	box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
 }
 
@@ -583,14 +696,14 @@ small {
 	place-items: center;
 	border: 1px solid var(--border);
 	border-radius: 9px;
-	background: #f5f4ef;
+	background: #ebe6da;
 	color: var(--text);
 	font-size: 25px;
 	line-height: 1;
 }
 
 .location-close-button:hover {
-	background: #e9e7df;
+	background: #dfd9cc;
 }
 
 .location-map {
@@ -605,6 +718,10 @@ small {
 	height: 100%;
 	border: 0;
 }
+
+/* =========================================
+   13. CUSTOM LINKS
+========================================= */
 
 #linksList {
 	display: flex;
@@ -621,7 +738,7 @@ small {
 	padding: 14px;
 	border: 1px solid var(--border);
 	border-radius: 10px;
-	background: #fcfcfa;
+	background: #ebe6da;
 }
 
 .link-row label {
@@ -631,8 +748,6 @@ small {
 .link-row button {
 	min-height: 42px;
 }
-
-/* Support common custom-link removal button names */
 
 .remove-link,
 .remove-link-button,
@@ -653,9 +768,17 @@ small {
 	background: #ffe3e3;
 }
 
+/* =========================================
+   14. CARD NAME
+========================================= */
+
 .card-name-section input {
 	max-width: 100%;
 }
+
+/* =========================================
+   15. SUBMIT SECTION
+========================================= */
 
 .submit-panel {
 	display: flex;
@@ -663,8 +786,8 @@ small {
 	justify-content: space-between;
 	gap: 20px;
 	padding: 24px 25px;
-	border-color: #d2e6de;
-	background: linear-gradient(135deg, #ffffff, #f1faf5);
+	border-color: var(--border);
+	background: var(--surface);
 }
 
 .submit-panel > div {
@@ -688,6 +811,10 @@ small {
 	min-height: 46px;
 	padding: 0 22px;
 }
+
+/* =========================================
+   16. TOAST NOTIFICATIONS
+========================================= */
 
 .toast {
 	position: fixed;
@@ -716,6 +843,10 @@ small {
 	transform: translateY(0);
 }
 
+/* =========================================
+   17. TABLET LAYOUT
+========================================= */
+
 @media (max-width: 760px) {
 	.page {
 		width: min(100% - 28px, 650px);
@@ -735,21 +866,56 @@ small {
 		gap: 17px;
 	}
 
-	.image-upload-grid {
-		gap: 12px;
+	/* Stack each upload box below its associated fields */
+
+	.organization-layout,
+	.contact-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
 	}
 
-	.upload-box {
-		padding: 14px;
+	.organization-fields,
+	.contact-fields {
+		display: contents;
+	}
+
+	.organization-layout .upload-box,
+	.contact-layout .upload-box {
+		min-height: 160px;
+		margin: 0 0 18px;
+		padding: 15px;
 	}
 
 	.upload-content {
-		flex-wrap: wrap;
-		gap: 12px;
+		flex-direction: row;
+		justify-content: flex-start;
+		gap: 14px;
+		text-align: left;
 	}
 
 	.upload-description {
-		flex-basis: 100%;
+		text-align: left;
+	}
+
+	.upload-meta {
+		text-align: left;
+	}
+
+	.preview {
+		flex-basis: 76px;
+		width: 76px;
+		height: 76px;
+	}
+
+	.image-upload-button {
+		flex-basis: 76px;
+		width: 76px;
+		height: 76px;
+	}
+
+	.image-upload-button svg {
+		width: 34px;
+		height: 34px;
 	}
 
 	.location-row {
@@ -774,6 +940,10 @@ small {
 		width: 100%;
 	}
 }
+
+/* =========================================
+   18. MOBILE LAYOUT
+========================================= */
 
 @media (max-width: 520px) {
 	.page {
@@ -844,35 +1014,25 @@ small {
 		font-size: 13px;
 	}
 
-	.image-upload-grid {
-		grid-template-columns: minmax(0, 1fr);
-		gap: 12px;
-	}
-
 	.upload-box {
-		min-height: 0;
-		padding: 15px;
+		min-height: 145px;
+		padding: 14px;
 	}
 
 	.upload-content {
-		flex-wrap: nowrap;
-		min-height: 76px;
-	}
-
-	.upload-description {
-		flex-basis: auto;
+		gap: 12px;
 	}
 
 	.preview {
-		flex-basis: 68px;
-		width: 68px;
-		height: 68px;
+		flex-basis: 76px;
+		width: 76px;
+		height: 76px;
 	}
 
 	.image-upload-button {
-		flex-basis: 44px;
-		width: 44px;
-		height: 44px;
+		flex-basis: 76px;
+		width: 76px;
+		height: 76px;
 	}
 
 	.field-label-row {
@@ -933,6 +1093,10 @@ small {
 	}
 }
 
+/* =========================================
+   19. ACCESSIBILITY
+========================================= */
+
 button:focus-visible,
 a:focus-visible {
 	outline: 3px solid rgba(15, 118, 110, 0.35);
@@ -946,150 +1110,4 @@ a:focus-visible {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 	}
-}
-
-
-/* ================================
-   RESTORED DARK AND CREAM THEME
-   Appended overrides for the existing stylesheet
-================================ */
-
-:root {
-	--primary: #0f766e;
-	--primary-dark: #115e59;
-	--primary-light: #d9f1ed;
-	--text: #202124;
-	--muted: #68665f;
-	--surface: #f4f0e6;
-	--page-bg: #111318;
-	--border: #d7d0c2;
-	--field-bg: #ebe6da;
-	--danger: #991b1b;
-	--shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
-}
-
-/* Main page background */
-body {
-	background: var(--page-bg);
-	color: #f4f0e6;
-}
-
-/* Header and form panels */
-.hero {
-	border-color: #d7d0c2;
-	background: #f4f0e6;
-	color: #202124;
-}
-
-.panel {
-	border-color: #d7d0c2;
-	background: #f4f0e6;
-	color: #202124;
-}
-
-/* Text inside cream panels */
-.section-head h2,
-.section-head p,
-label,
-.upload-description strong,
-.submit-panel h2,
-.submit-panel p {
-	color: #202124;
-}
-
-/* Inputs */
-input,
-textarea {
-	border-color: #d0c8b9;
-	background: #ebe6da;
-	color: #202124;
-}
-
-input::placeholder,
-textarea::placeholder {
-	color: #77766f;
-}
-
-input:focus,
-textarea:focus {
-	border-color: var(--primary);
-	background: #f8f5ed;
-}
-
-input[readonly] {
-	background: #e2e9e2;
-	color: #454943;
-}
-
-/* Image upload areas */
-.upload-box {
-	border-color: #c9c1b2;
-	background: #ebe6da;
-}
-
-.upload-box:hover {
-	border-color: #9abdb2;
-	background: #e7e4d9;
-}
-
-/* Custom link rows */
-.link-row {
-	border-color: #d7d0c2;
-	background: #ebe6da;
-}
-
-/* Submit section */
-.submit-panel {
-	border-color: #d7d0c2;
-	background: #f4f0e6;
-}
-
-/* Secondary buttons */
-.button.secondary,
-.same-number-button {
-	border-color: #d0c8b9;
-	background: #ebe6da;
-	color: #202124;
-}
-
-.button.secondary:hover {
-	background: #dfd9cc;
-}
-
-/* Active WhatsApp toggle */
-.same-number-button:hover,
-.same-number-button.active,
-.same-number-button.same-number-active {
-	border-color: var(--primary);
-	background: var(--primary-light);
-	color: var(--primary-dark);
-}
-
-/* Back navigation remains visible on the dark background */
-.back-home {
-	color: #79d4c5;
-}
-
-.back-home:hover {
-	color: #a1e6dc;
-}
-
-/* Keep the location modal readable */
-.location-modal {
-	background: #f4f0e6;
-	color: #202124;
-}
-
-.location-map-header {
-	border-bottom-color: #d7d0c2;
-}
-
-.location-close-button {
-	border-color: #d7d0c2;
-	background: #ebe6da;
-	color: #202124;
-}
-
-.location-close-button:hover {
-	background: #dfd9cc;
 }
