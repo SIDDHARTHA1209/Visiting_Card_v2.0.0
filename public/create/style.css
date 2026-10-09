@@ -1,6 +1,3 @@
-/* ================================
-   ROOT VARIABLES
-================================ */
 
 :root {
 	--primary: #0f766e;
@@ -16,10 +13,6 @@
 	--shadow: 0 12px 35px rgba(30, 35, 25, 0.07);
 	--radius: 16px;
 }
-
-/* ================================
-   RESET AND BASE
-================================ */
 
 * {
 	box-sizing: border-box;
@@ -63,10 +56,6 @@ svg {
 	display: none !important;
 }
 
-/* ================================
-   PAGE LAYOUT
-================================ */
-
 .page {
 	width: min(100% - 36px, 1050px);
 	margin: 0 auto;
@@ -87,11 +76,6 @@ svg {
 .back-home:hover {
 	color: var(--primary-dark);
 }
-
-/* ================================
-   HERO HEADER
-================================ */
-
 .hero {
 	display: flex;
 	align-items: center;
@@ -133,10 +117,6 @@ svg {
 	font-size: 14px;
 	line-height: 1.7;
 }
-
-/* ================================
-   FORM
-================================ */
 
 #cardForm {
 	display: flex;
@@ -193,10 +173,6 @@ svg {
 	line-height: 1.6;
 }
 
-/* ================================
-   FORM GRID
-================================ */
-
 .grid {
 	display: grid;
 	gap: 18px;
@@ -206,10 +182,6 @@ svg {
 .grid.two {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-
-/* ================================
-   LABELS AND FIELDS
-================================ */
 
 label {
 	display: flex;
@@ -290,10 +262,6 @@ small {
 	font-weight: 500;
 }
 
-/* ================================
-   WHATSAPP FIELD
-================================ */
-
 .field-group {
 	display: flex;
 	flex-direction: column;
@@ -338,10 +306,6 @@ small {
 	border-color: #9fc9c1;
 	background: #e2eee9;
 }
-
-/* ================================
-   IMAGE UPLOAD GRID
-================================ */
 
 .image-upload-grid {
 	display: grid;
@@ -411,10 +375,6 @@ small {
 	overflow-wrap: anywhere;
 }
 
-/* ================================
-   IMAGE UPLOAD BUTTONS
-================================ */
-
 .image-upload-button {
 	display: grid;
 	flex: 0 0 48px;
@@ -473,10 +433,6 @@ small {
 	background: #ffe8bf;
 }
 
-/* ================================
-   IMAGE PREVIEWS
-================================ */
-
 .preview {
 	display: block;
 	flex: 0 0 76px;
@@ -497,10 +453,6 @@ small {
 	background: #ffffff;
 	object-fit: contain;
 }
-
-/* ================================
-   BUTTONS
-================================ */
 
 .button {
 	display: inline-flex;
@@ -556,10 +508,6 @@ small {
 	margin-top: 5px;
 }
 
-/* ================================
-   LOCATION
-================================ */
-
 .location-row {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto auto;
@@ -576,10 +524,6 @@ small {
 	margin-top: 9px;
 	overflow-wrap: anywhere;
 }
-
-/* ================================
-   LOCATION MAP MODAL
-================================ */
 
 .location-map-container {
 	position: fixed;
@@ -662,10 +606,6 @@ small {
 	border: 0;
 }
 
-/* ================================
-   CUSTOM LINKS
-================================ */
-
 #linksList {
 	display: flex;
 	flex-direction: column;
@@ -713,17 +653,9 @@ small {
 	background: #ffe3e3;
 }
 
-/* ================================
-   CARD NAME
-================================ */
-
 .card-name-section input {
 	max-width: 100%;
 }
-
-/* ================================
-   SUBMIT SECTION
-================================ */
 
 .submit-panel {
 	display: flex;
@@ -757,10 +689,6 @@ small {
 	padding: 0 22px;
 }
 
-/* ================================
-   TOAST NOTIFICATION
-================================ */
-
 .toast {
 	position: fixed;
 	right: 22px;
@@ -787,10 +715,6 @@ small {
 	opacity: 1;
 	transform: translateY(0);
 }
-
-/* ================================
-   TABLET RESPONSIVENESS
-================================ */
 
 @media (max-width: 760px) {
 	.page {
@@ -850,10 +774,6 @@ small {
 		width: 100%;
 	}
 }
-
-/* ================================
-   MOBILE RESPONSIVENESS
-================================ */
 
 @media (max-width: 520px) {
 	.page {
@@ -1013,10 +933,6 @@ small {
 	}
 }
 
-/* ================================
-   ACCESSIBILITY
-================================ */
-
 button:focus-visible,
 a:focus-visible {
 	outline: 3px solid rgba(15, 118, 110, 0.35);
@@ -1030,4 +946,150 @@ a:focus-visible {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 	}
+}
+
+
+/* ================================
+   RESTORED DARK AND CREAM THEME
+   Appended overrides for the existing stylesheet
+================================ */
+
+:root {
+	--primary: #0f766e;
+	--primary-dark: #115e59;
+	--primary-light: #d9f1ed;
+	--text: #202124;
+	--muted: #68665f;
+	--surface: #f4f0e6;
+	--page-bg: #111318;
+	--border: #d7d0c2;
+	--field-bg: #ebe6da;
+	--danger: #991b1b;
+	--shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
+}
+
+/* Main page background */
+body {
+	background: var(--page-bg);
+	color: #f4f0e6;
+}
+
+/* Header and form panels */
+.hero {
+	border-color: #d7d0c2;
+	background: #f4f0e6;
+	color: #202124;
+}
+
+.panel {
+	border-color: #d7d0c2;
+	background: #f4f0e6;
+	color: #202124;
+}
+
+/* Text inside cream panels */
+.section-head h2,
+.section-head p,
+label,
+.upload-description strong,
+.submit-panel h2,
+.submit-panel p {
+	color: #202124;
+}
+
+/* Inputs */
+input,
+textarea {
+	border-color: #d0c8b9;
+	background: #ebe6da;
+	color: #202124;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: #77766f;
+}
+
+input:focus,
+textarea:focus {
+	border-color: var(--primary);
+	background: #f8f5ed;
+}
+
+input[readonly] {
+	background: #e2e9e2;
+	color: #454943;
+}
+
+/* Image upload areas */
+.upload-box {
+	border-color: #c9c1b2;
+	background: #ebe6da;
+}
+
+.upload-box:hover {
+	border-color: #9abdb2;
+	background: #e7e4d9;
+}
+
+/* Custom link rows */
+.link-row {
+	border-color: #d7d0c2;
+	background: #ebe6da;
+}
+
+/* Submit section */
+.submit-panel {
+	border-color: #d7d0c2;
+	background: #f4f0e6;
+}
+
+/* Secondary buttons */
+.button.secondary,
+.same-number-button {
+	border-color: #d0c8b9;
+	background: #ebe6da;
+	color: #202124;
+}
+
+.button.secondary:hover {
+	background: #dfd9cc;
+}
+
+/* Active WhatsApp toggle */
+.same-number-button:hover,
+.same-number-button.active,
+.same-number-button.same-number-active {
+	border-color: var(--primary);
+	background: var(--primary-light);
+	color: var(--primary-dark);
+}
+
+/* Back navigation remains visible on the dark background */
+.back-home {
+	color: #79d4c5;
+}
+
+.back-home:hover {
+	color: #a1e6dc;
+}
+
+/* Keep the location modal readable */
+.location-modal {
+	background: #f4f0e6;
+	color: #202124;
+}
+
+.location-map-header {
+	border-bottom-color: #d7d0c2;
+}
+
+.location-close-button {
+	border-color: #d7d0c2;
+	background: #ebe6da;
+	color: #202124;
+}
+
+.location-close-button:hover {
+	background: #dfd9cc;
 }
