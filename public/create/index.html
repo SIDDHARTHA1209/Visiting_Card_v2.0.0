@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -8,27 +8,34 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta name="apple-mobile-web-app-title" content="Visiting Card">
+
 	<link rel="manifest" href="../manifest.json">
 	<link rel="apple-touch-icon" href="../icons/icon-192.png">
-	<title>Digital Visiting Card Creator</title>
 	<link rel="stylesheet" href="style.css">
+
+	<title>Digital Visiting Card Creator</title>
 </head>
+
 <body>
 	<main class="page">
+
 		<a href="../" class="back-home">← Back to Home</a>
 
+		<!-- Page Header -->
 		<section class="hero">
-			<div>
-				<span class="eyebrow">Digital Card</span>
-				<h1>Create your Digital Visiting Dard</h1>
+			<div class="hero-content">
+				<span class="eyebrow">DIGITAL CARD</span>
+				<h1>Create Your Digital Visiting Card</h1>
 				<p>Create a professional digital card with contact actions, location, links and QR for sharing.</p>
 			</div>
-			<!-- <div class="hero-badge">Mobile • Desktop • PWA-ready</div> -->
 		</section>
+
 		<form id="cardForm" autocomplete="off" novalidate>
+
+			<!-- 01: Basic Information -->
 			<section class="panel">
 				<div class="section-head">
-					<span>01</span>
+					<span class="section-number">01</span>
 					<div>
 						<h2>Basic Information</h2>
 						<p>Kindly introduce yourself professionally.</p>
@@ -48,43 +55,29 @@
 				</div>
 			</section>
 
+			<!-- 02: Institute or Organization -->
 			<section class="panel">
 				<div class="section-head">
-					<span>02</span>
+					<span class="section-number">02</span>
 					<div>
-						<h2>Institute/Organization</h2>
-						<p>Kindly provide your organization or academic affiliation.</p>
-					</div>
-				</div>
-
-				<div class="grid two">
-					<label>
-						Institute/Organization Name
-						<input id="instituteName" name="instituteName" maxlength="180">
-					</label>
-
-					<div class="upload-box">
-						<label>Institute/Organization Logo</label>
-
-						<input id="logo" type="file" accept="image/*" hidden>
-
-						<button id="logoAddButton" class="image-upload-button" type="button" aria-label="Add institute logo">
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								<rect x="3" y="3" width="18" height="18" rx="3"></rect>
-								<circle cx="8.5" cy="8.5" r="1.5"></circle>
-								<path d="M21 15l-5-5L5 21"></path>
-							</svg>
-						</button>
-
-						<img id="logoPreview" class="preview hidden" alt="Institute logo preview">
-						<small id="logoMeta">Kindly add your institute logo.</small>
+						<h2>Institute / Organization</h2>
+						<p>Provide your organization or academic affiliation.</p>
 					</div>
 				</div>
 
 				<label>
-					Institute/Organization Description
-					<textarea id="companyDescription" name="companyDescription" rows="4" maxlength="1000" placeholder="Kindly describe your company or institution..."></textarea>
-					<!-- <small>Kindly describe your company, organization or institution briefly.</small> -->
+					Institute / Organization Name
+					<input id="instituteName" name="instituteName" maxlength="180">
+				</label>
+
+				<label>
+					Institute / Organization Description
+					<textarea
+						id="companyDescription"
+						name="companyDescription"
+						rows="4"
+						maxlength="1000"
+						placeholder="Describe your company or institution..."></textarea>
 				</label>
 
 				<label>
@@ -98,12 +91,13 @@
 				</label>
 			</section>
 
+			<!-- 03: Contact Information -->
 			<section class="panel">
 				<div class="section-head">
-					<span>03</span>
+					<span class="section-number">03</span>
 					<div>
-						<h2>Contact</h2>
-						<p>Kindly provide the contact actions .</p>
+						<h2>Contact Information</h2>
+						<p>Provide the contact details people can use to reach you.</p>
 					</div>
 				</div>
 
@@ -112,82 +106,158 @@
 						Phone <b>*</b>
 						<input id="phone" name="phone" required type="tel" autocomplete="tel">
 					</label>
+
 					<div class="field-group">
 						<div class="field-label-row">
 							<label for="whatsapp">WhatsApp Number</label>
-							<button id="sameWhatsappButton" class="same-number-button" type="button">Same as Phone</button>
+							<button
+								id="sameWhatsappButton"
+								class="same-number-button"
+								type="button">Same as Phone</button>
 						</div>
+
 						<input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel">
 					</div>
 				</div>
 
 				<label>
-					Email(s)
-					<input id="emails" name="emails" type="email" multiple placeholder="name@example.com, other@example.com">
+					Email Address(es)
+					<input
+						id="emails"
+						name="emails"
+						type="email"
+						multiple
+						placeholder="name@example.com, other@example.com">
 				</label>
 			</section>
 
+			<!-- 04: Image Uploads -->
 			<section class="panel">
 				<div class="section-head">
-					<span>04</span>
+					<span class="section-number">04</span>
 					<div>
-						<h2>Profile Photo</h2>
-						<p>Kindly add the person's profile photo separately from the institute logo.</p>
+						<h2>Images</h2>
+						<p>Add your profile photo and institute logo separately.</p>
 					</div>
 				</div>
 
-				<div class="upload-box profile-upload">
-					<label>Profile Photo</label>
+				<div class="image-upload-grid">
 
-					<input id="photo" type="file" accept="image/*" hidden>
+					<!-- Profile Photo -->
+					<div class="upload-box profile-upload">
+						<label for="photo">Profile Photo</label>
 
-					<button id="photoAddButton" class="image-upload-button" type="button" aria-label="Add profile photo">
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<rect x="3" y="3" width="18" height="18" rx="3"></rect>
-							<circle cx="8.5" cy="8.5" r="1.5"></circle>
-							<path d="M21 15l-5-5L5 21"></path>
-						</svg>
-					</button>
+						<div class="upload-content">
+							<button
+								id="photoAddButton"
+								class="image-upload-button photo-button"
+								type="button"
+								aria-label="Add profile photo">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="3" y="3" width="18" height="18" rx="3"></rect>
+									<circle cx="8.5" cy="8.5" r="1.5"></circle>
+									<path d="M21 15l-5-5L5 21"></path>
+								</svg>
+							</button>
 
-					<img id="photoPreview" class="preview hidden" alt="Photo preview">
-					<small id="photoMeta">Kindly add a profile photo.</small>
+							<img
+								id="photoPreview"
+								class="preview profile-preview hidden"
+								alt="Profile photo preview">
+
+							<div class="upload-description">
+								<strong>Personal Photo</strong>
+								<small>Upload a clear photo of yourself.</small>
+							</div>
+						</div>
+
+						<input id="photo" name="photo" type="file" accept="image/*" hidden>
+
+						<small id="photoMeta" class="upload-meta">No profile photo selected.</small>
+					</div>
+
+					<!-- Institute Logo -->
+					<div class="upload-box logo-upload">
+						<label for="logo">Institute / Organization Logo</label>
+
+						<div class="upload-content">
+							<button
+								id="logoAddButton"
+								class="image-upload-button logo-button"
+								type="button"
+								aria-label="Add institute logo">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="3" y="3" width="18" height="18" rx="3"></rect>
+									<circle cx="8.5" cy="8.5" r="1.5"></circle>
+									<path d="M21 15l-5-5L5 21"></path>
+								</svg>
+							</button>
+
+							<img
+								id="logoPreview"
+								class="preview logo-preview hidden"
+								alt="Institute logo preview">
+
+							<div class="upload-description">
+								<strong>Organization Logo</strong>
+								<small>Upload your institute or company logo.</small>
+							</div>
+						</div>
+
+						<input id="logo" name="logo" type="file" accept="image/*" hidden>
+
+						<small id="logoMeta" class="upload-meta">No organization logo selected.</small>
+					</div>
+
 				</div>
 			</section>
 
+			<!-- 05: Location -->
 			<section class="panel">
 				<div class="section-head">
-					<span>05</span>
+					<span class="section-number">05</span>
 					<div>
 						<h2>Location</h2>
-						<p>Kindly enter a Google Maps URL or detect your current position.</p>
+						<p>Enter a Google Maps URL or detect your current position.</p>
 					</div>
 				</div>
 
 				<div class="location-row">
-					<input id="locationLink" name="locationLink" type="url" placeholder="https://maps.google.com/?q=...">
+					<input
+						id="locationLink"
+						name="locationLink"
+						type="url"
+						placeholder="https://maps.google.com/?q=...">
 
 					<button id="detectLocation" class="button secondary" type="button">
-						Detect location
+						Detect Location
 					</button>
 
 					<button id="viewLocation" class="button secondary" type="button">
-						View location
+						View Location
 					</button>
 				</div>
 
-				<small id="locationStatus"></small>
+				<small id="locationStatus" class="location-status"></small>
 
-				<div id="locationMapContainer" class="location-map-container hidden" aria-hidden="true">
+				<!-- Location Preview Modal -->
+				<div
+					id="locationMapContainer"
+					class="location-map-container hidden"
+					aria-hidden="true">
+
 					<div class="location-modal">
 						<div class="location-map-header">
 							<div>
 								<strong>Location Preview</strong>
-								<small>Kindly verify that the displayed location is correct.</small>
+								<small>Verify that the displayed location is correct.</small>
 							</div>
 
-							<button id="closeLocationMap" class="location-close-button" type="button" aria-label="Close location preview">
-								×
-							</button>
+							<button
+								id="closeLocationMap"
+								class="location-close-button"
+								type="button"
+								aria-label="Close location preview">×</button>
 						</div>
 
 						<div class="location-map">
@@ -196,49 +266,57 @@
 								title="Google Maps location preview"
 								loading="lazy"
 								referrerpolicy="no-referrer-when-downgrade"
-								allowfullscreen>
-							</iframe>
+								allowfullscreen></iframe>
 						</div>
 					</div>
 				</div>
 			</section>
 
+			<!-- 06: Custom Links -->
 			<section class="panel">
 				<div class="section-head">
-					<span>06</span>
+					<span class="section-number">06</span>
 					<div>
 						<h2>Custom Links</h2>
-						<p>Kindly add LinkedIn, GitHub, portfolio, research profile or any public URL.</p>
+						<p>Add LinkedIn, GitHub, portfolio, research profile or other public URLs.</p>
 					</div>
 				</div>
 
 				<div id="linksList"></div>
 
-				<button id="addLink" class="button secondary" type="button">
-					+ Add a link
+				<button id="addLink" class="button secondary add-link-button" type="button">
+					+ Add a Link
 				</button>
 			</section>
 
+			<!-- 07: Card Name -->
 			<section class="panel card-name-section">
 				<div class="section-head">
-					<span>07</span>
+					<span class="section-number">07</span>
 					<div>
 						<h2>Card Name</h2>
-						<p>Kindly give this card a name if you want to identify it easily.</p>
+						<p>Give this card a name to identify it easily inside the application.</p>
 					</div>
 				</div>
 
 				<label>
-					Would you like to give a name to this card?
-					<input id="cardName" name="cardName" type="text" maxlength="80" placeholder="Example: College Card" autocomplete="off">
-					<small>This name is used to identify your card inside the application.</small>
+					Card Name <span class="optional-label">(Optional)</span>
+					<input
+						id="cardName"
+						name="cardName"
+						type="text"
+						maxlength="80"
+						placeholder="Example: College Card"
+						autocomplete="off">
+					<small>This name helps you identify your saved card.</small>
 				</label>
 			</section>
 
+			<!-- Submit -->
 			<section class="panel submit-panel">
 				<div>
-					<h2>Ready to create?</h2>
-					<p>Your browser keeps a local draft until submission succeeds.</p>
+					<h2>Ready to Create?</h2>
+					<p>Review your details before creating your digital visiting card.</p>
 				</div>
 
 				<button id="submitButton" class="button primary" type="submit">
@@ -249,16 +327,17 @@
 		</form>
 	</main>
 
+	<!-- Notification -->
 	<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 	<script src="script.js"></script>
 
 	<script>
-		if("serviceWorker" in navigator){
-			window.addEventListener("load",()=>{
-				navigator.serviceWorker.register("../sw.js",{scope:"../"})
-					.then(reg=>console.log("Service Worker registered:",reg.scope))
-					.catch(error=>console.error("Service Worker registration failed:",error));
+		if ("serviceWorker" in navigator) {
+			window.addEventListener("load", () => {
+				navigator.serviceWorker.register("../sw.js", { scope: "../" })
+					.then(reg => console.log("Service Worker registered:", reg.scope))
+					.catch(error => console.error("Service Worker registration failed:", error));
 			});
 		}
 	</script>
