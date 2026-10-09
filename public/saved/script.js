@@ -1,4 +1,4 @@
-const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbwHNQCppL_cY_xrL44_IKwzFxbEq6mQrSgS6in1wZfO1HrcT0jiTuVVtfehrhtwzDPeiw/exec"};
+const CONFIG={API_URL:"https://script.google.com/macros/s/AKfycbxypiPlx03NxLC1riLifBALvIWLkrSSnMlkKjUXa5CajVzxVBlpxX0J0d9xGdWBMBAFWw/exec"};
 const APP_KEY="digitalVisitingCardAppId";let cards=[];const $=id=>document.getElementById(id);document.addEventListener("DOMContentLoaded",load);
 async function load(){try{const appId=localStorage.getItem(APP_KEY);if(!appId)return empty("App ID not found. Return to Home first.");const data=await api("?action=ownedcards&appId="+encodeURIComponent(appId));cards=data.cards||[];render();}catch(e){empty(e.message||"Unable to load cards.");}}
 async function api(q){const r=await fetch(CONFIG.API_URL+q,{cache:"no-store"});const d=await r.json();if(!r.ok||d.success===false)throw new Error(d.error||"Request failed.");return d;}
