@@ -12,8 +12,8 @@ function getOrCreateAppId(){
     let appId=localStorage.getItem(key);
 
     if(!appId){
-        appId=crypto.randomUUID
-            ?crypto.randomUUID()
+        appId=window.crypto&&typeof window.crypto.randomUUID==="function"
+            ?window.crypto.randomUUID()
             :"APP-"+Date.now()+"-"+Math.random().toString(36).slice(2,12);
 
         localStorage.setItem(key,appId);
@@ -29,6 +29,7 @@ let deferredInstallPrompt=null;
 let whatsappSameAsPhone=false;
 
 document.addEventListener("DOMContentLoaded",function(){
+	getOrCreateAppId();
 	loadDraft();
 
 	if(!$("linksList").querySelector(".link-row")){
