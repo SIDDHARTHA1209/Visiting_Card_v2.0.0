@@ -538,12 +538,30 @@ small {
 	object-fit: contain;
 }
 
-.upload-preview-wrap.has-image .image-upload-button {
+/* Hide the upload icon when an image is selected */
+.upload-box.has-image .image-upload-button {
 	display: none;
 }
 
-.upload-preview-wrap:not(.has-image) .preview {
+/* Show the preview only when an image is selected */
+.upload-box:not(.has-image) .preview {
 	display: none;
+}
+
+/* Keep the uploaded image centered inside the upload box */
+.upload-box {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Keep the remove button positioned over the image */
+.remove-image-button {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 2;
 }
 
 .remove-image-button {
