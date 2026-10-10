@@ -357,28 +357,30 @@ button{
 }
 
 /* Name */
-.back-name{
-  position:absolute;
-  left:5%;
-  top:11%;
-  width:52%;
-  max-width:52%;
-  z-index:5;
-  overflow-wrap:anywhere;
-  word-break:normal;
+/* Name container */
+.back-name {
+    position: absolute;
+    left: 5%;
+    top: 11%;
+    width: 34%;
+    max-width: 34%;
+    z-index: 5;
+    overflow: hidden;
 }
 
-.back-name h2{
-  color:var(--navy);
-  font-size:clamp(18px,3.2vw,42px);
-  line-height:1.05;
-  font-weight:950;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  overflow-wrap:anywhere;
-  word-break:break-word;
+/* Name text */
+.back-name h2 {
+    color: var(--navy);
+    font-size: clamp(16px, 2.5vw, 36px);
+    line-height: 1.05;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+    margin: 0;
 }
-
 .back-name p{
   margin-top:5px;
   color:#111;
