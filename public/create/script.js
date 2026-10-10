@@ -869,6 +869,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		remove.addEventListener("click", function () {
 			input.value = "";
+			delete input.dataset.payload;
 			preview.removeAttribute("src");
 			preview.classList.add("hidden");
 			wrapper.classList.remove("has-image");
