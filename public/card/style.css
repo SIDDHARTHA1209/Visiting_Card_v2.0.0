@@ -199,13 +199,12 @@ button{
 }
 
 /* Institute logo */
-
 .front-logo{
   position:absolute;
-  top:12%;
+  top:7%;
   left:50%;
   transform:translateX(-50%);
-  width:20%;
+  width:15%;
   aspect-ratio:1;
   display:grid;
   place-items:center;
@@ -230,26 +229,26 @@ button{
 }
 
 /* Institute name */
-
 .front-institute{
   position:absolute;
-  top:43%;
+  top:37%;
   left:50%;
   transform:translateX(-50%);
   width:80%;
   text-align:center;
   color:var(--navy);
-  font-size:clamp(14px,2vw,24px);
+  font-size:clamp(12px,1.7vw,21px);
   font-weight:950;
-  letter-spacing:1px;
+  letter-spacing:0.5px;
+  line-height:1.15;
+  overflow-wrap:anywhere;
+  z-index:2;
 }
-
 /* Name and title */
-
 .front-person{
   position:absolute;
   left:50%;
-  top:51%;
+  top:49%;
   transform:translateX(-50%);
   width:82%;
   text-align:center;
@@ -358,22 +357,26 @@ button{
 }
 
 /* Name */
-
 .back-name{
   position:absolute;
   left:5%;
   top:11%;
-  width:38%;
+  width:52%;
+  max-width:52%;
   z-index:5;
+  overflow-wrap:anywhere;
+  word-break:normal;
 }
 
 .back-name h2{
   color:var(--navy);
-  font-size:clamp(25px,4vw,50px);
-  line-height:1;
+  font-size:clamp(18px,3.2vw,42px);
+  line-height:1.05;
   font-weight:950;
   text-transform:uppercase;
-  letter-spacing:1px;
+  letter-spacing:0.5px;
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
 
 .back-name p{
@@ -711,13 +714,14 @@ button{
   }
 
   .front-logo{
-    width:20%;
-    top:11%;
+    width:15%;
+    top:7%;
   }
 
   .front-institute{
-    top:41%;
-    font-size:12px;
+    top:37%;
+    font-size:11px;
+    line-height:1.15;
   }
 
   .front-person{
