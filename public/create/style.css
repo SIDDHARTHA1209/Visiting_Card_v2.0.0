@@ -55,7 +55,8 @@ svg {
 	display: block;
 }
 
-.hidden {
+.hidden,
+[hidden] {
 	display: none !important;
 }
 
@@ -130,10 +131,28 @@ svg {
 	line-height: 1.7;
 }
 
-.install-button {
-	border-color: #a8d48f !important;
-	background: #d9f0c6 !important;
-	color: #202124 !important;
+/* Only one Install App button is shown: the right-hand one, in light green */
+.hero #installButton {
+	display: none !important;
+}
+
+.hero button:not(#installButton) {
+	min-height: 42px;
+	padding: 0 18px;
+	border: 1px solid #a8d48f;
+	border-radius: 9px;
+	background: #d9f0c6;
+	color: #202124;
+	font-size: 12px;
+	font-weight: 850;
+	white-space: nowrap;
+	transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.hero button:not(#installButton):hover {
+	border-color: #92c279;
+	background: #cbe8b3;
+	transform: translateY(-1px);
 }
 
 /* =========================================
@@ -355,6 +374,10 @@ small {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+}
+
+.contact-fields > .field-group {
+	margin-bottom: 18px;
 }
 
 .organization-fields > label:last-child,
@@ -738,23 +761,27 @@ small {
 	min-height: 42px;
 }
 
+.link-row button,
 .remove-link,
 .remove-link-button,
 .link-remove-button {
 	min-height: 42px;
-	padding: 0 12px;
-	border: 1px solid #f0caca;
+	padding: 0 16px;
+	border: 1px solid #f2b3b3;
 	border-radius: 9px;
-	background: #fff1f1;
-	color: #a52828;
+	background: #fcdcdc;
+	color: #8f1f1f;
 	font-size: 12px;
 	font-weight: 800;
+	transition: background 0.2s, border-color 0.2s;
 }
 
+.link-row button:hover,
 .remove-link:hover,
 .remove-link-button:hover,
 .link-remove-button:hover {
-	background: #ffe3e3;
+	border-color: #eb9a9a;
+	background: #f9c9c9;
 }
 
 /* =========================================
