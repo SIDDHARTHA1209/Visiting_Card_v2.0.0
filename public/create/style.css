@@ -1,20 +1,17 @@
 /* =========================================
-   1. THEME AND GLOBAL STYLES
+   1. THEME
 ========================================= */
 
 :root {
 	--primary: #0f766e;
 	--primary-dark: #115e59;
-	--primary-light: #d9f1ed;
 	--text: #202124;
 	--muted: #68665f;
 	--surface: #f4f0e6;
 	--page-bg: #111318;
 	--border: #d7d0c2;
 	--field-bg: #ebe6da;
-	--danger: #991b1b;
 	--radius: 16px;
-	--shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
 }
 
 * {
@@ -27,7 +24,6 @@ html {
 
 body {
 	margin: 0;
-	padding: 0;
 	background: var(--page-bg);
 	color: var(--text);
 	font-family: Inter, "Segoe UI", Arial, sans-serif;
@@ -50,17 +46,12 @@ button:disabled {
 	opacity: 0.6;
 }
 
-img,
-svg {
-	display: block;
-}
-
 .hidden {
 	display: none !important;
 }
 
 /* =========================================
-   2. PAGE CONTAINER
+   2. PAGE AND HEADER
 ========================================= */
 
 .page {
@@ -70,9 +61,7 @@ svg {
 }
 
 .back-home {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
+	display: inline-block;
 	margin-bottom: 22px;
 	color: #79d4c5;
 	font-size: 13px;
@@ -84,25 +73,20 @@ svg {
 	color: #a1e6dc;
 }
 
-/* =========================================
-   3. PAGE HEADER
-========================================= */
-
 .hero {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 24px;
-	margin-bottom: 18px;
-	padding: 30px;
+	margin-bottom: 14px;
+	padding: 28px 25px;
 	border: 1px solid var(--border);
 	border-radius: 18px;
 	background: var(--surface);
-	box-shadow: var(--shadow);
 }
 
 .hero-content {
-	max-width: 700px;
+	min-width: 0;
 }
 
 .eyebrow {
@@ -116,28 +100,41 @@ svg {
 
 .hero h1 {
 	margin: 0;
-	font-size: clamp(25px, 4vw, 36px);
+	font-size: clamp(25px, 3.5vw, 34px);
 	font-weight: 850;
 	line-height: 1.2;
-	letter-spacing: -0.8px;
+	letter-spacing: -0.6px;
 }
 
 .hero p {
-	max-width: 650px;
-	margin: 12px 0 0;
+	margin: 10px 0 0;
 	color: var(--muted);
-	font-size: 14px;
+	font-size: 13px;
 	line-height: 1.7;
 }
 
+/* Install App: light green */
+
 .install-button {
-	border-color: #a8d48f !important;
-	background: #d9f0c6 !important;
-	color: #202124 !important;
+	flex: 0 0 auto;
+	min-height: 42px;
+	padding: 0 17px;
+	border: 1px solid #a8d48f;
+	border-radius: 9px;
+	background: #d9f0c6;
+	color: #263b20;
+	font-size: 12px;
+	font-weight: 850;
+	transition: background .2s, transform .2s;
+}
+
+.install-button:hover {
+	background: #c8e8af;
+	transform: translateY(-1px);
 }
 
 /* =========================================
-   4. FORM PANELS
+   3. PANELS
 ========================================= */
 
 #cardForm {
@@ -148,25 +145,24 @@ svg {
 
 .panel {
 	min-width: 0;
-	padding: 25px;
+	padding: 24px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	background: var(--surface);
-	box-shadow: 0 5px 20px rgba(0, 0, 0, 0.035);
 }
 
 .section-head {
 	display: flex;
 	align-items: flex-start;
 	gap: 14px;
-	margin-bottom: 23px;
+	margin-bottom: 22px;
 }
 
 .section-number {
 	display: grid;
-	flex: 0 0 42px;
-	width: 42px;
-	height: 42px;
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
 	place-items: center;
 	border: 1px solid #cfe5df;
 	border-radius: 12px;
@@ -174,11 +170,6 @@ svg {
 	color: var(--primary);
 	font-size: 13px;
 	font-weight: 900;
-}
-
-.section-head > div {
-	min-width: 0;
-	padding-top: 1px;
 }
 
 .section-head h2 {
@@ -196,13 +187,12 @@ svg {
 }
 
 /* =========================================
-   5. INPUTS AND LABELS
+   4. FIELDS
 ========================================= */
 
 .grid {
 	display: grid;
 	gap: 18px;
-	min-width: 0;
 }
 
 .grid.two {
@@ -214,19 +204,19 @@ label {
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
-	margin-bottom: 18px;
-	color: #202124;
+	margin-bottom: 17px;
+	color: var(--text);
 	font-size: 12px;
 	font-weight: 800;
 }
 
 .grid > label,
-.grid > .field-group {
+.organization-fields > label:last-child,
+.contact-fields > label:last-child {
 	margin-bottom: 0;
 }
 
 label b {
-	display: inline;
 	color: #b42318;
 }
 
@@ -235,23 +225,23 @@ textarea {
 	display: block;
 	width: 100%;
 	min-width: 0;
-	padding: 12px 13px;
-	border: 1px solid #d0c8b9;
+	padding: 11px 12px;
+	border: 1px solid #d7d0c2;
 	border-radius: 10px;
 	outline: none;
 	background: var(--field-bg);
 	color: var(--text);
 	font-size: 13px;
 	font-weight: 500;
-	transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+	transition: border-color .2s, box-shadow .2s;
 }
 
 input {
-	min-height: 43px;
+	min-height: 42px;
 }
 
 textarea {
-	min-height: 85px;
+	min-height: 84px;
 	resize: vertical;
 	line-height: 1.6;
 }
@@ -265,13 +255,15 @@ textarea::placeholder {
 input:focus,
 textarea:focus {
 	border-color: var(--primary);
-	background: #f8f5ed;
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, .1);
 }
 
 input[readonly] {
 	background: #e2e9e2;
-	color: #454943;
+}
+
+input[type="file"][hidden] {
+	display: none !important;
 }
 
 small {
@@ -284,12 +276,49 @@ small {
 
 .optional-label {
 	color: var(--muted);
-	font-size: 11px;
 	font-weight: 500;
 }
 
 /* =========================================
-   6. WHATSAPP SAME-AS-PHONE BUTTON
+   5. ORGANIZATION AND CONTACT GRID
+========================================= */
+
+.organization-layout,
+.contact-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	align-items: stretch;
+	gap: 24px;
+	margin-bottom: 18px;
+}
+
+.organization-fields,
+.contact-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	min-width: 0;
+}
+
+/* The left fields and right upload area share a row.
+   The upload area stretches to the height of the fields. */
+
+.organization-fields label,
+.contact-fields label {
+	margin: 0;
+}
+
+.organization-fields textarea {
+	height: 100%;
+	min-height: 130px;
+}
+
+.contact-fields {
+	gap: 18px;
+}
+
+/* =========================================
+   6. WHATSAPP
 ========================================= */
 
 .field-group {
@@ -304,7 +333,6 @@ small {
 	align-items: center;
 	justify-content: space-between;
 	gap: 10px;
-	min-height: 18px;
 }
 
 .field-label-row label {
@@ -318,67 +346,60 @@ small {
 	border: 1px solid #d0c8b9;
 	border-radius: 7px;
 	background: #ebe6da;
-	color: #202124;
+	color: var(--text);
 	font-size: 10px;
 	font-weight: 800;
-	transition: background 0.2s, border-color 0.2s;
 }
 
 .same-number-button:hover,
 .same-number-button.active,
 .same-number-button.same-number-active {
 	border-color: var(--primary);
-	background: var(--primary-light);
+	background: #d9f1ed;
 	color: var(--primary-dark);
 }
 
-#whatsapp.same-number-active {
-	border-color: #9fc9c1;
-	background: #e2eee9;
-}
-
 /* =========================================
-   7. DESKTOP IMAGE AND FIELD LAYOUTS
+   7. IMAGE FIELD LABELS AND INSTRUCTIONS
 ========================================= */
 
-.organization-layout,
-.contact-layout {
-	display: grid;
-	grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.85fr);
-	align-items: stretch;
-	gap: 18px;
-	min-width: 0;
-}
-
-.organization-fields,
-.contact-fields {
+.image-field {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	min-height: 0;
 }
 
-.organization-fields > label:last-child,
-.contact-fields > label:last-child {
-	margin-bottom: 18px;
+.image-field > label {
+	margin: 0 0 5px;
+	font-size: 12px;
+	font-weight: 850;
+}
+
+.upload-instruction {
+	margin: 0 0 12px;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.6;
 }
 
 /* =========================================
-   8. IMAGE UPLOAD BOXES
+   8. UPLOAD BOX
 ========================================= */
 
 .upload-box {
+	position: relative;
 	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 12px;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
 	min-width: 0;
-	min-height: 100%;
-	margin: 0;
-	padding: 18px;
-	border: 1px solid #d7d0c2;
+	min-height: 190px;
+	padding: 22px;
+	border: 1px dashed #c9c3b7;
 	border-radius: 12px;
 	background: #ebe6da;
-	transition: border-color 0.2s, background 0.2s;
+	transition: border-color .2s, background .2s;
 }
 
 .upload-box:hover {
@@ -386,52 +407,13 @@ small {
 	background: #e7e4d9;
 }
 
-.upload-box > label {
-	display: block;
-	margin: 0;
-	color: #202124;
-	font-size: 12px;
-	font-weight: 850;
-	line-height: 1.5;
+.logo-upload {
+	min-height: 190px;
 }
 
-.upload-content {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	min-width: 0;
-	text-align: center;
+.profile-upload {
+	min-height: 190px;
 }
-
-.upload-description {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	min-width: 0;
-}
-
-.upload-description strong {
-	color: #202124;
-	font-size: 12px;
-	font-weight: 850;
-}
-
-.upload-description small {
-	max-width: 230px;
-}
-
-.upload-meta {
-	min-height: 17px;
-	overflow-wrap: anywhere;
-	text-align: center;
-}
-
-/* =========================================
-   9. IMAGE UPLOAD BUTTONS
-========================================= */
 
 .image-upload-button {
 	display: grid;
@@ -444,15 +426,11 @@ small {
 	border-radius: 13px;
 	background: #f7f1e5;
 	color: var(--primary);
-	transition: background 0.2s, border-color 0.2s, transform 0.15s;
+	transition: background .2s, border-color .2s;
 }
 
 .image-upload-button:hover {
-	transform: translateY(-1px);
-}
-
-.image-upload-button:active {
-	transform: translateY(0);
+	background: #f0ebdf;
 }
 
 .image-upload-button svg {
@@ -465,20 +443,7 @@ small {
 	stroke-linejoin: round;
 }
 
-/* Profile photo button */
-
-.photo-button {
-	border-color: #a9d2ff;
-	background: #e8f2ff;
-	color: #0879e8;
-}
-
-.photo-button:hover {
-	border-color: #8bb8ef;
-	background: #d8e9ff;
-}
-
-/* Institute logo button */
+/* Logo icon: light orange */
 
 .logo-button {
 	border-color: #f0c27d;
@@ -491,74 +456,79 @@ small {
 	background: #ffe8bf;
 }
 
-/* =========================================
-   10. IMAGE PREVIEWS AND REMOVE BUTTONS
-========================================= */
+/* Profile icon: light blue */
 
-.upload-preview-wrap {
-	position: relative;
-	display: inline-flex;
-	flex: 0 0 auto;
-	align-items: flex-start;
-	justify-content: center;
-	max-width: 100%;
+.photo-button {
+	border-color: #a9d2ff;
+	background: #e8f2ff;
+	color: #0879e8;
 }
+
+.photo-button:hover {
+	border-color: #8bb8ef;
+	background: #d8e9ff;
+}
+
+/* =========================================
+   9. IMAGE PREVIEWS
+========================================= */
 
 .preview {
 	display: block;
-	flex: 0 0 120px;
-	width: 120px;
-	height: 120px;
-	object-fit: cover;
+	width: min(100%, 180px);
+	height: 150px;
+	object-fit: contain;
 	border: 1px solid #d0cabe;
 	border-radius: 12px;
 	background: #ffffff;
 }
 
-.profile-preview {
-	border-radius: 50%;
-}
-
 .logo-preview {
-	padding: 5px;
-	border-radius: 12px;
-	background: #ffffff;
 	object-fit: contain;
 }
 
-.upload-preview-wrap.has-image .image-upload-button {
-	display: none;
+.profile-preview {
+	width: 140px;
+	height: 140px;
+	border-radius: 50%;
+	object-fit: cover;
 }
 
-.upload-preview-wrap:not(.has-image) .preview {
+.upload-box.has-image .image-upload-button {
 	display: none;
 }
 
 .remove-image-button {
 	position: absolute;
-	top: -9px;
-	right: -9px;
+	top: 8px;
+	right: 8px;
 	display: grid;
-	width: 28px;
-	height: 28px;
+	width: 30px;
+	height: 30px;
 	padding: 0;
 	place-items: center;
 	border: 1px solid #f0b7b7;
 	border-radius: 50%;
 	background: #fff0f0;
 	color: #a52828;
-	font-size: 20px;
+	font-size: 21px;
 	font-weight: 800;
 	line-height: 1;
-	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+	box-shadow: 0 3px 8px rgba(0, 0, 0, .12);
 }
 
 .remove-image-button:hover {
 	background: #ffe0e0;
 }
 
+.upload-meta {
+	min-height: 16px;
+	margin-top: 7px;
+	overflow-wrap: anywhere;
+}
+
 /* =========================================
-   11. BUTTONS
+   10. BUTTONS
 ========================================= */
 
 .button {
@@ -573,22 +543,11 @@ small {
 	font-size: 12px;
 	font-weight: 850;
 	text-align: center;
-	white-space: nowrap;
-	transition: background 0.2s, border-color 0.2s, transform 0.15s;
+	transition: background .2s, transform .15s;
 }
 
 .button:hover {
 	transform: translateY(-1px);
-}
-
-.button:active {
-	transform: translateY(0);
-}
-
-.button:disabled {
-	cursor: not-allowed;
-	opacity: 0.55;
-	transform: none;
 }
 
 .button.primary {
@@ -603,7 +562,7 @@ small {
 .button.secondary {
 	border-color: #d0c8b9;
 	background: #ebe6da;
-	color: #202124;
+	color: var(--text);
 }
 
 .button.secondary:hover {
@@ -615,7 +574,7 @@ small {
 }
 
 /* =========================================
-   12. LOCATION
+   11. LOCATION
 ========================================= */
 
 .location-row {
@@ -625,17 +584,11 @@ small {
 	gap: 9px;
 }
 
-.location-row input {
-	min-width: 0;
-}
-
 .location-status {
 	min-height: 16px;
-	margin-top: 9px;
+	margin-top: 8px;
 	overflow-wrap: anywhere;
 }
-
-/* Location modal */
 
 .location-map-container {
 	position: fixed;
@@ -645,9 +598,8 @@ small {
 	align-items: center;
 	justify-content: center;
 	padding: 20px;
-	background: rgba(0, 0, 0, 0.72);
+	background: rgba(0, 0, 0, .72);
 	backdrop-filter: blur(5px);
-	-webkit-backdrop-filter: blur(5px);
 }
 
 .location-map-container.hidden {
@@ -657,11 +609,9 @@ small {
 .location-modal {
 	width: min(800px, 100%);
 	overflow: hidden;
-	border: 1px solid rgba(255, 255, 255, 0.2);
 	border-radius: 14px;
 	background: var(--surface);
-	color: var(--text);
-	box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
+	box-shadow: 0 20px 70px rgba(0, 0, 0, .3);
 }
 
 .location-map-header {
@@ -671,10 +621,6 @@ small {
 	gap: 15px;
 	padding: 15px 17px;
 	border-bottom: 1px solid var(--border);
-}
-
-.location-map-header > div {
-	min-width: 0;
 }
 
 .location-map-header strong {
@@ -692,18 +638,11 @@ small {
 	flex: 0 0 36px;
 	width: 36px;
 	height: 36px;
-	padding: 0;
 	place-items: center;
 	border: 1px solid var(--border);
 	border-radius: 9px;
 	background: #ebe6da;
-	color: var(--text);
 	font-size: 25px;
-	line-height: 1;
-}
-
-.location-close-button:hover {
-	background: #dfd9cc;
 }
 
 .location-map {
@@ -720,7 +659,7 @@ small {
 }
 
 /* =========================================
-   13. CUSTOM LINKS
+   12. CUSTOM LINKS
 ========================================= */
 
 #linksList {
@@ -732,10 +671,10 @@ small {
 
 .link-row {
 	display: grid;
-	grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr) auto;
+	grid-template-columns: minmax(0, .8fr) minmax(0, 1.5fr) auto;
 	align-items: end;
 	gap: 12px;
-	padding: 14px;
+	padding: 12px;
 	border: 1px solid var(--border);
 	border-radius: 10px;
 	background: #ebe6da;
@@ -745,31 +684,32 @@ small {
 	margin: 0;
 }
 
-.link-row button {
-	min-height: 42px;
-}
+/* Custom Link Remove button: light red */
 
+.link-row button,
 .remove-link,
 .remove-link-button,
 .link-remove-button {
 	min-height: 42px;
 	padding: 0 12px;
-	border: 1px solid #f0caca;
+	border: 1px solid #f0b7b7;
 	border-radius: 9px;
-	background: #fff1f1;
+	background: #ffe5e5;
 	color: #a52828;
 	font-size: 12px;
 	font-weight: 800;
 }
 
+.link-row button:hover,
 .remove-link:hover,
 .remove-link-button:hover,
 .link-remove-button:hover {
-	background: #ffe3e3;
+	border-color: #e99b9b;
+	background: #ffd5d5;
 }
 
 /* =========================================
-   14. CARD NAME
+   13. CARD NAME
 ========================================= */
 
 .card-name-section input {
@@ -777,7 +717,7 @@ small {
 }
 
 /* =========================================
-   15. SUBMIT SECTION
+   14. SUBMIT PANEL
 ========================================= */
 
 .submit-panel {
@@ -785,9 +725,7 @@ small {
 	align-items: center;
 	justify-content: space-between;
 	gap: 20px;
-	padding: 24px 25px;
-	border-color: var(--border);
-	background: var(--surface);
+	padding: 23px 25px;
 }
 
 .submit-panel > div {
@@ -813,7 +751,7 @@ small {
 }
 
 /* =========================================
-   16. TOAST NOTIFICATIONS
+   15. TOAST
 ========================================= */
 
 .toast {
@@ -824,18 +762,17 @@ small {
 	width: max-content;
 	max-width: min(420px, calc(100% - 32px));
 	padding: 13px 17px;
-	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: 10px;
 	background: #172033;
 	color: #ffffff;
 	font-size: 12px;
 	font-weight: 700;
 	line-height: 1.6;
-	box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 12px 35px rgba(0, 0, 0, .2);
 	opacity: 0;
 	pointer-events: none;
 	transform: translateY(12px);
-	transition: opacity 0.25s, transform 0.25s;
+	transition: opacity .25s, transform .25s;
 }
 
 .toast.show {
@@ -844,7 +781,7 @@ small {
 }
 
 /* =========================================
-   17. TABLET LAYOUT
+   16. TABLET
 ========================================= */
 
 @media (max-width: 760px) {
@@ -854,7 +791,7 @@ small {
 	}
 
 	.hero {
-		padding: 24px;
+		padding: 22px;
 	}
 
 	.panel {
@@ -863,59 +800,30 @@ small {
 
 	.grid.two {
 		grid-template-columns: minmax(0, 1fr);
-		gap: 17px;
 	}
-
-	/* Stack each upload box below its associated fields */
 
 	.organization-layout,
 	.contact-layout {
 		grid-template-columns: minmax(0, 1fr);
-		gap: 0;
+		gap: 18px;
 	}
 
 	.organization-fields,
 	.contact-fields {
-		display: contents;
+		display: flex;
+		gap: 17px;
 	}
 
-	.organization-layout .upload-box,
-	.contact-layout .upload-box {
-		min-height: 160px;
-		margin: 0 0 18px;
-		padding: 15px;
+	.organization-fields textarea {
+		min-height: 110px;
 	}
 
-	.upload-content {
-		flex-direction: row;
-		justify-content: flex-start;
-		gap: 14px;
-		text-align: left;
+	.image-field {
+		width: 100%;
 	}
 
-	.upload-description {
-		text-align: left;
-	}
-
-	.upload-meta {
-		text-align: left;
-	}
-
-	.preview {
-		flex-basis: 76px;
-		width: 76px;
-		height: 76px;
-	}
-
-	.image-upload-button {
-		flex-basis: 76px;
-		width: 76px;
-		height: 76px;
-	}
-
-	.image-upload-button svg {
-		width: 34px;
-		height: 34px;
+	.upload-box {
+		min-height: 150px;
 	}
 
 	.location-row {
@@ -942,7 +850,7 @@ small {
 }
 
 /* =========================================
-   18. MOBILE LAYOUT
+   17. MOBILE
 ========================================= */
 
 @media (max-width: 520px) {
@@ -957,7 +865,9 @@ small {
 	}
 
 	.hero {
-		margin-bottom: 15px;
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 16px;
 		padding: 20px 17px;
 		border-radius: 14px;
 	}
@@ -968,6 +878,10 @@ small {
 
 	.hero p {
 		font-size: 12px;
+	}
+
+	.install-button {
+		width: 100%;
 	}
 
 	#cardForm {
@@ -988,7 +902,6 @@ small {
 		flex-basis: 36px;
 		width: 36px;
 		height: 36px;
-		border-radius: 10px;
 		font-size: 11px;
 	}
 
@@ -1000,33 +913,28 @@ small {
 		font-size: 11px;
 	}
 
-	.grid {
+	.organization-layout,
+	.contact-layout {
+		gap: 17px;
+	}
+
+	.organization-fields,
+	.contact-fields {
 		gap: 15px;
 	}
 
-	label {
+	.image-field > label {
 		font-size: 12px;
 	}
 
-	input,
-	textarea {
-		padding: 11px;
-		font-size: 13px;
+	.upload-instruction {
+		margin-bottom: 10px;
+		font-size: 11px;
 	}
 
 	.upload-box {
-		min-height: 145px;
-		padding: 14px;
-	}
-
-	.upload-content {
-		gap: 12px;
-	}
-
-	.preview {
-		flex-basis: 76px;
-		width: 76px;
-		height: 76px;
+		min-height: 150px;
+		padding: 16px;
 	}
 
 	.image-upload-button {
@@ -1035,13 +943,18 @@ small {
 		height: 76px;
 	}
 
-	.field-label-row {
-		align-items: center;
+	.image-upload-button svg {
+		width: 35px;
+		height: 35px;
 	}
 
-	.same-number-button {
-		padding: 5px 7px;
-		font-size: 9px;
+	.profile-preview {
+		width: 110px;
+		height: 110px;
+	}
+
+	.preview {
+		max-width: 100%;
 	}
 
 	.location-row {
@@ -1094,20 +1007,18 @@ small {
 }
 
 /* =========================================
-   19. ACCESSIBILITY
+   18. ACCESSIBILITY
 ========================================= */
 
 button:focus-visible,
 a:focus-visible {
-	outline: 3px solid rgba(15, 118, 110, 0.35);
+	outline: 3px solid rgba(15, 118, 110, .35);
 	outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
 	* {
 		scroll-behavior: auto !important;
-		transition-duration: 0.01ms !important;
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
+		transition-duration: .01ms !important;
 	}
 }
