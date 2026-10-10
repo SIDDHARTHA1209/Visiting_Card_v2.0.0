@@ -7,6 +7,20 @@ const CONFIG={
 };
 
 const $=id=>document.getElementById(id);
+function getOrCreateAppId(){
+    const key="digitalVisitingCardAppId";
+    let appId=localStorage.getItem(key);
+
+    if(!appId){
+        appId=crypto.randomUUID
+            ?crypto.randomUUID()
+            :"APP-"+Date.now()+"-"+Math.random().toString(36).slice(2,12);
+
+        localStorage.setItem(key,appId);
+    }
+
+    return appId;
+}
 const form=$("cardForm");
 const toast=$("toast");
 
@@ -424,7 +438,7 @@ async function submitForm(event){
 	try{
 		const body={
 			action:"submit",
-			appId:localStorage.getItem("digitalVisitingCardAppId"),
+			appId:getOrCreateAppId(),
 			cardName:$("cardName").value.trim(),
 			name:$("name").value.trim(),
 			title:$("title").value.trim(),
