@@ -6,8 +6,8 @@
   "scope":"/Visiting_Card_v2.0.0/",
   "display":"standalone",
   "orientation":"portrait-primary",
-  "background_color":"#111318",
-  "theme_color":"#0F766E",
+  "background_color": "#111318",
+  "theme_color": "#082341"
   "icons":[
     {
       "src":"/Visiting_Card_v2.0.0/icons/icon-192.png",
