@@ -1,5 +1,5 @@
-const CACHE_NAME = "visiting-card-v2401";
-const BASE_PATH = "/Visiting_Card_v2.0.0/";
+const CACHE_NAME = "visiting-card-v2500";
+const BASE_PATH = new URL(self.registration.scope).pathname;
 
 const PRECACHE_ASSETS = [
     BASE_PATH,
