@@ -1069,11 +1069,10 @@ function renderResponseQr(
     qr,
     {
       text:
-        CONFIG.FRONTEND_BASE_URL+
-        "viewer/?guid="+
-        encodeURIComponent(
-          guid
-        ),
+        new URL(
+            "card/?guid=" + encodeURIComponent(guid),
+            window.location.origin + "/"
+        ).href,
 
       width:160,
       height:160,
