@@ -68,41 +68,34 @@ function notify(message,isError=false){
 	toastTimer=setTimeout(()=>toast.classList.remove("show"),3500);
 }
 
-function setupInstallPrompt(){
-	window.addEventListener("beforeinstallprompt",event=>{
-		event.preventDefault();
-		deferredInstallPrompt=event;
-		createInstallButton();
-	});
+function setupInstallPrompt() {
+    const button = $("installButton");
 
-	window.addEventListener("appinstalled",()=>{
-		deferredInstallPrompt=null;
-		removeInstallButton();
-		notify("Digital Visiting Card Creator installed successfully.");
-	});
+    if (!button) return;
 
-	if(isIOS()&&!isStandalone()){
-		createIOSInstallButton();
-	}
+    button.hidden = true;
+
+    window.addEventListener("beforeinstallprompt", event => {
+        event.preventDefault();
+
+        deferredInstallPrompt = event;
+        button.hidden = false;
+    });
+
+    window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        button.hidden = true;
+
+        notify("Digital Visiting Card Creator installed successfully.");
+    });
+
+    button.addEventListener("click", installApp);
+
+    if (isIOS() && !isStandalone()) {
+        button.hidden = false;
+    }
 }
 
-function createInstallButton(){
-	if($("installAppButton"))return;
-
-	const button=document.createElement("button");
-
-	button.id="installAppButton";
-	button.className="button secondary";
-	button.type="button";
-	button.textContent="Install App";
-	button.addEventListener("click",installApp);
-
-	const hero=document.querySelector(".hero");
-
-	if(hero){
-		hero.appendChild(button);
-	}
-}
 
 function removeInstallButton(){
 	const button=$("installAppButton");
@@ -112,25 +105,35 @@ function removeInstallButton(){
 	}
 }
 
-async function installApp(){
-	if(!deferredInstallPrompt){
-		if(isIOS()){
-			showIOSInstallInstructions();
-		}
+async function installApp() {
+    if (!deferredInstallPrompt) {
+        if (isIOS()) {
+            showIOSInstallInstructions();
+        } else {
+            notify(
+                "Installation is not available yet. Open this site in a supported browser and check the PWA requirements.",
+                true
+            );
+        }
 
-		return;
-	}
+        return;
+    }
 
-	deferredInstallPrompt.prompt();
+    deferredInstallPrompt.prompt();
 
-	const result=await deferredInstallPrompt.userChoice;
+    const result = await deferredInstallPrompt.userChoice;
 
-	if(result.outcome==="accepted"){
-		notify("Installing Digital Visiting Card Creator...");
-	}
+    if (result.outcome === "accepted") {
+        notify("Installing Digital Visiting Card Creator...");
+    }
 
-	deferredInstallPrompt=null;
-	removeInstallButton();
+    deferredInstallPrompt = null;
+
+    const button = $("installButton");
+
+    if (button) {
+        button.hidden = true;
+    }
 }
 
 function isIOS(){
@@ -140,24 +143,6 @@ function isIOS(){
 function isStandalone(){
 	return window.matchMedia("(display-mode: standalone)").matches||
 		window.navigator.standalone===true;
-}
-
-function createIOSInstallButton(){
-	if($("installAppButton"))return;
-
-	const button=document.createElement("button");
-
-	button.id="installAppButton";
-	button.className="button secondary";
-	button.type="button";
-	button.textContent="Install App";
-	button.addEventListener("click",showIOSInstallInstructions);
-
-	const hero=document.querySelector(".hero");
-
-	if(hero){
-		hero.appendChild(button);
-	}
 }
 
 function showIOSInstallInstructions(){
