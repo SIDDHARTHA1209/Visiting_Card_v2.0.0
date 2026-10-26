@@ -1047,44 +1047,38 @@ function flipCard(){
     );
 }
 
-function renderResponseQr(
-  guid
-){
+function renderResponseQr(guid) {
+  const qr = $("responseQrCode");
 
-  const qr=
-    $("responseQrCode");
-
-  if(
-    !qr||
-    !guid||
-    typeof QRCode===
-    "undefined"
-  ){
+  if (!qr || !guid || typeof QRCode === "undefined") {
     return;
   }
 
-  qr.innerHTML="";
+  // Clear any previously generated QR code.
+  qr.innerHTML = "";
 
-  new QRCode(
-    qr,
-    {
-      text:
-        new URL(
-            "card/?guid=" + encodeURIComponent(guid),
-            window.location.origin + "/"
-        ).href,
+  // Build the correct card URL for the current hosting platform.
+  const baseUrl = new URL("../", window.location.href);
 
-      width:160,
-      height:160,
-
-      colorDark:"#062442",
-      colorLight:"#ffffff",
-
-      correctLevel:
-        QRCode.CorrectLevel.H
-    }
+  const cardUrl = new URL(
+    "card/?guid=" + encodeURIComponent(guid),
+    baseUrl
   );
+
+  // Generate a slightly larger QR code.
+  new QRCode(qr, {
+    text: cardUrl.href,
+
+    width: 180,
+    height: 180,
+
+    colorDark: "#062442",
+    colorLight: "#ffffff",
+
+    correctLevel: QRCode.CorrectLevel.H
+  });
 }
+
 
 async function shareCard(){
 
