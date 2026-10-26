@@ -2,40 +2,31 @@ const CONFIG={
   API_URL:"https://script.google.com/macros/s/AKfycbxypiPlx03NxLC1riLifBALvIWLkrSSnMlkKjUXa5CajVzxVBlpxX0J0d9xGdWBMBAFWw/exec",
   FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/"
 };
-
 let currentCard=null;
 let savedCards=[];
 let flipped=false;
-
 const $=id=>document.getElementById(id);
-
 document.addEventListener(
   "DOMContentLoaded",
   loadCard
 );
-
 async function loadCard(){
-
   const guid=
     new URLSearchParams(
       location.search
     ).get("guid");
-
   if(!guid){
     showError(
       "Missing card GUID."
     );
     return;
   }
-
   try{
-
     const data=
       await api(
         "?action=card&guid="+
         encodeURIComponent(guid)
       );
-
     if(
       !data.success||
       !data.record
@@ -45,52 +36,38 @@ async function loadCard(){
         "Card not found."
       );
     }
-
     currentCard=
       data.record;
-
     renderCard();
-
     loadOwnedCards(guid);
-
   }catch(error){
-
     showError(
       error.message||
       "Unable to load card."
     );
   }
 }
-
 async function loadOwnedCards(
   currentGuid
 ){
-
   const appId=
     localStorage.getItem(
       "digitalVisitingCardAppId"
     );
-
   if(!appId)return;
-
   try{
-
     const data=
       await api(
         "?action=ownedcards&appId="+
         encodeURIComponent(appId)
       );
-
     savedCards=
       Array.isArray(data.cards)?
       data.cards:
       [];
-
     const select=
       $("cardSelect");
-
     if(!select)return;
-
     select.innerHTML=
       savedCards.map(
         card=>`
@@ -112,7 +89,6 @@ async function loadOwnedCards(
           </option>
         `
       ).join("");
-
     if(
       !savedCards.some(
         card=>
@@ -120,7 +96,6 @@ async function loadOwnedCards(
           currentGuid
       )
     ){
-
       select.insertAdjacentHTML(
         "afterbegin",
         `
@@ -136,19 +111,14 @@ async function loadOwnedCards(
         `
       );
     }
-
     select.value=
       currentGuid;
-
     $("cardSelector")
       .classList
       .remove("hidden");
-
   }catch(error){}
 }
-
 async function api(query){
-
   const response=
     await fetch(
       CONFIG.API_URL+
@@ -157,10 +127,8 @@ async function api(query){
         cache:"no-store"
       }
     );
-
   const data=
     await response.json();
-
   if(
     !response.ok||
     data.success===false
@@ -170,15 +138,11 @@ async function api(query){
       "API request failed."
     );
   }
-
   return data;
 }
-
 function renderCard(){
-
   const r=
     currentCard;
-
   const emails=
     String(r.emails||"")
       .split(",")
@@ -186,7 +150,6 @@ function renderCard(){
         x=>x.trim()
       )
       .filter(Boolean);
-
   const links=
     Array.isArray(
       r.customLinks
@@ -195,82 +158,64 @@ function renderCard(){
     parseLinks(
       r.customLinks
     );
-
   const logo=
     driveImageUrl(
       r.logoUrl
     );
-
   const photo=
     driveImageUrl(
       r.photoUrl
     );
-
   const website=
     r.website?
     normalizeWebsite(
       r.website
     ):
     "";
-
   const description=
     r.companyDescription||
     r.description||
     "Connect with this card owner.";
-
   document.title=
     (
       r.name||
       "Digital Visiting Card"
     )+
     " • Digital Card";
-
   $("app").className=
     "card-page";
-
   $("app").innerHTML=`
-
     <header class="page-header">
-
       <a
         class="home-link"
         href="../"
       >
         ⌂ Home
       </a>
-
       <div
         id="cardSelector"
         class="card-selector hidden"
       >
-
         <label
           for="cardSelect"
         >
           Select Card
         </label>
-
         <select
           id="cardSelect"
         ></select>
-
       </div>
-
       <a
         class="create-card"
         href="../create/"
       >
         Create Card
       </a>
-
     </header>
-
     <section class="viewer-shell">
-
       <p class="flip-hint">
         Tap the card to view the back side
       </p>
-
       <div
         id="cardStage"
         class="card-stage"
@@ -278,33 +223,25 @@ function renderCard(){
         role="button"
         aria-label="Flip digital visiting card"
       >
-
         <div
           id="cardInner"
           class="card-inner"
         >
-
           <!-- FRONT -->
-
           <article
             class="visiting-card card-front"
           >
-
             <div class="front-navy"></div>
             <div class="front-gold"></div>
-
             <div class="front-logo">
-
               ${
                 logo?
-
                 `
                   <img
                     src="${safeAttr(logo)}"
                     alt="Institute logo"
                     onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"
                   >
-
                   <div
                     class="front-logo-fallback"
                     style="display:none"
@@ -317,9 +254,7 @@ function renderCard(){
                     )}
                   </div>
                 `
-
                 :
-
                 `
                   <div
                     class="front-logo-fallback"
@@ -333,12 +268,9 @@ function renderCard(){
                   </div>
                 `
               }
-
             </div>
-
             ${
               r.instituteName?
-
               `
                 <div class="front-institute">
                   ${escapeHtml(
@@ -346,24 +278,18 @@ function renderCard(){
                   )}
                 </div>
               `
-
               :
-
               ""
             }
-
             <div class="front-person">
-
               <h1>
                 ${escapeHtml(
                   r.name||
                   "Your Name"
                 )}
               </h1>
-
               ${
                 r.title?
-
                 `
                   <p>
                     ${escapeHtml(
@@ -371,17 +297,12 @@ function renderCard(){
                     )}
                   </p>
                 `
-
                 :
-
                 ""
               }
-
             </div>
-
             ${
               photo?
-
               `
                 <img
                   class="front-profile"
@@ -389,7 +310,6 @@ function renderCard(){
                   alt=""
                   onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"
                 >
-
                 <div
                   class="front-profile-fallback"
                   style="display:none"
@@ -399,9 +319,7 @@ function renderCard(){
                   )}
                 </div>
               `
-
               :
-
               `
                 <div
                   class="front-profile-fallback"
@@ -412,12 +330,9 @@ function renderCard(){
                 </div>
               `
             }
-
             <div class="front-bottom">
-
               ${
                 r.website?
-
                 `
                   <span>
                     ${escapeHtml(
@@ -425,60 +340,44 @@ function renderCard(){
                     )}
                   </span>
                 `
-
                 :
-
                 `
                   <span>
                     DIGITAL CARD
                   </span>
                 `
               }
-
               ${
                 r.phone?
-
                 `
                   <div
                     class="front-divider"
                   ></div>
-
                   <span>
                     ${escapeHtml(
                       r.phone
                     )}
                   </span>
                 `
-
                 :
-
                 ""
               }
-
             </div>
-
           </article>
-
           <!-- BACK -->
-
           <article
             class="visiting-card card-back"
           >
-
             <div class="back-gold"></div>
-
             <div class="back-name">
-
               <h2>
                 ${escapeHtml(
                   r.name||
                   "Your Name"
                 )}
               </h2>
-
               ${
                 r.title?
-
                 `
                   <p>
                     ${escapeHtml(
@@ -486,33 +385,24 @@ function renderCard(){
                     )}
                   </p>
                 `
-
                 :
-
                 ""
               }
-
             </div>
-
-            <button
+            <div
               id="responseQr"
               class="back-qr"
-              type="button"
-              aria-label="Open viewer response form"
+              role="img"
+              aria-label="QR code that opens this digital visiting card"
             >
-
               <span
                 id="responseQrCode"
                 class="qr"
               ></span>
-
-            </button>
-
+            </div>
             <div class="back-contact">
-
               ${
                 r.instituteName?
-
                 `
                   <h3>
                     ${escapeHtml(
@@ -520,62 +410,45 @@ function renderCard(){
                     )}
                   </h3>
                 `
-
                 :
-
                 ""
               }
-
               <p>
-
                 ${
                   r.address?
-
                   `
                     ${escapeHtml(
                       r.address
                     )}
                     <br>
                   `
-
                   :
-
                   ""
                 }
-
                 ${
                   r.phone?
-
                   `
                     ${escapeHtml(
                       r.phone
                     )}
                     <br>
                   `
-
                   :
-
                   ""
                 }
-
                 ${
                   emails.length?
-
                   `
                     ${escapeHtml(
                       emails[0]
                     )}
                     <br>
                   `
-
                   :
-
                   ""
                 }
-
                 ${
                   r.website?
-
                   `
                     <a
                       href="${safeAttr(
@@ -589,72 +462,49 @@ function renderCard(){
                       )}
                     </a>
                   `
-
                   :
-
                   ""
                 }
-
               </p>
-
             </div>
-
             <div class="back-gold-bottom">
-
               <span>
                 DIGITAL
               </span>
-
               <span>|</span>
-
               <span>
                 CONNECT
               </span>
-
               <span>|</span>
-
               <span>
                 SHARE
               </span>
-
             </div>
-
           </article>
-
         </div>
-
       </div>
-
       <div class="social-actions">
-
         ${
           r.phone?
-
           actionLink(
             "phone",
             telHref(r.phone),
             "Call"
           ):
-
           ""
         }
-
         ${
           r.whatsapp?
-
           actionLink(
             "whatsapp",
             "https://wa.me/"+
             digits(r.whatsapp),
             "WhatsApp"
           ):
-
           ""
         }
-
         ${
           emails.length?
-
           actionLink(
             "email",
             emails.length>1?
@@ -663,25 +513,19 @@ function renderCard(){
             emails[0],
             "Email"
           ):
-
           ""
         }
-
         ${
           website?
-
           actionLink(
             "website",
             website,
             "Website"
           ):
-
           ""
         }
-
         ${
           r.locationLink?
-
           actionLink(
             "map",
             directionsUrl(
@@ -689,26 +533,19 @@ function renderCard(){
             ),
             "Maps"
           ):
-
           ""
         }
-
         ${
           links.length?
-
           actionLink(
             "more",
             "#",
             "More"
           ):
-
           ""
         }
-
       </div>
-
       <div class="main-actions">
-
         <button
           id="saveCard"
           class="main-action"
@@ -717,7 +554,6 @@ function renderCard(){
           ${icon("bookmark")}
           <span>Save Card</span>
         </button>
-
         <button
           id="shareCard"
           class="main-action"
@@ -726,9 +562,7 @@ function renderCard(){
           ${icon("share")}
           <span>Share Card</span>
         </button>
-
       </div>
-
       <button
         id="saveContact"
         class="contact-action"
@@ -737,24 +571,18 @@ function renderCard(){
         ${icon("contact")}
         <span>Save Contact</span>
       </button>
-
     </section>
-
     ${
       emails.length>1?
-
       `
         <div
           id="emailPicker"
           class="modal hidden"
         >
-
           <div class="modal-box">
-
             <h3>
               Select email
             </h3>
-
             ${
               emails.map(
                 email=>`
@@ -768,41 +596,31 @@ function renderCard(){
                 `
               ).join("")
             }
-
             <button
               id="closeEmailPicker"
               type="button"
             >
               Close
             </button>
-
           </div>
-
         </div>
       `:
-
       ""
     }
-
     ${
       links.length?
-
       `
         <div
           id="linksPicker"
           class="modal hidden"
         >
-
           <div class="modal-box">
-
             <h3>
               Select link
             </h3>
-
             ${
               links.map(
                 link=>`
-
                   <a
                     href="${safeAttr(
                       normalizeWebsite(
@@ -819,46 +637,34 @@ function renderCard(){
                       "Link"
                     )}
                   </a>
-
                 `
               ).join("")
             }
-
             <button
               id="closeLinksPicker"
               type="button"
             >
               Close
             </button>
-
           </div>
-
         </div>
       `:
-
       ""
     }
   `;
-
   setupInteractions();
-
   renderResponseQr(
     r.guid
   );
 }
-
 function setupInteractions(){
-
   const stage=
     $("cardStage");
-
   const select=
     $("cardSelect");
-
   stage.addEventListener(
     "click",
     event=>{
-
       if(
         event.target.closest(
           "a,button,select,input"
@@ -866,33 +672,25 @@ function setupInteractions(){
       ){
         return;
       }
-
       flipCard();
     }
   );
-
   stage.addEventListener(
     "keydown",
     event=>{
-
       if(
         event.key==="Enter"||
         event.key===" "
       ){
-
         event.preventDefault();
-
         flipCard();
       }
     }
   );
-
   select?.addEventListener(
     "change",
     ()=>{
-
       if(select.value){
-
         location.href=
           "?guid="+
           encodeURIComponent(
@@ -901,26 +699,21 @@ function setupInteractions(){
       }
     }
   );
-
   document
     .querySelectorAll(
       '.social-action[aria-label="Email"]'
     )
     .forEach(
       button=>{
-
         button.addEventListener(
           "click",
           event=>{
-
             if(
               button.getAttribute(
                 "href"
               )==="#"
             ){
-
               event.preventDefault();
-
               $("emailPicker")
                 ?.classList
                 .remove(
@@ -931,20 +724,16 @@ function setupInteractions(){
         );
       }
     );
-
   document
     .querySelectorAll(
       '.social-action[aria-label="More"]'
     )
     .forEach(
       button=>{
-
         button.addEventListener(
           "click",
           event=>{
-
             event.preventDefault();
-
             $("linksPicker")
               ?.classList
               .remove(
@@ -954,7 +743,6 @@ function setupInteractions(){
         );
       }
     );
-
   $("closeEmailPicker")
     ?.addEventListener(
       "click",
@@ -963,7 +751,6 @@ function setupInteractions(){
           ?.classList
           .add("hidden")
     );
-
   $("closeLinksPicker")
     ?.addEventListener(
       "click",
@@ -972,16 +759,13 @@ function setupInteractions(){
           ?.classList
           .add("hidden")
     );
-
   document
     .querySelectorAll(".modal")
     .forEach(
       modal=>{
-
         modal.addEventListener(
           "click",
           event=>{
-
             if(
               event.target===
               modal
@@ -990,35 +774,17 @@ function setupInteractions(){
                 "hidden"
               );
             }
-
           }
         );
-
       }
     );
-
-  $("responseQr")
-    ?.addEventListener(
-      "click",
-      event=>{
-
-        event.stopPropagation();
-
-        location.href=
-          CONFIG.FRONTEND_BASE_URL+
-          "viewer/?guid="+
-          encodeURIComponent(
-            currentCard.guid
-          );
-      }
-    );
-
+  // QR clicks must not navigate or trigger the card-flip handler.
+  $("responseQr")?.addEventListener("click", event => event.stopPropagation());
   $("shareCard")
     ?.addEventListener(
       "click",
       shareCard
     );
-
   $("saveContact")
     ?.addEventListener(
       "click",
@@ -1027,18 +793,14 @@ function setupInteractions(){
           currentCard
         )
     );
-
   $("saveCard")
     ?.addEventListener(
       "click",
       saveCardLocally
     );
 }
-
 function flipCard(){
-
   flipped=!flipped;
-
   $("cardInner")
     ?.classList
     .toggle(
@@ -1046,80 +808,78 @@ function flipCard(){
       flipped
     );
 }
-
 function renderResponseQr(guid) {
   const qr = $("responseQrCode");
-
-  if (!qr || !guid || typeof QRCode === "undefined") {
+  const qrBox = $("responseQr");
+  if (!qr || !qrBox || !guid || typeof QRCode === "undefined") {
     return;
   }
-
-  // Clear any previously generated QR code.
+  // This area is a display only; clicking it must not navigate anywhere.
+  qrBox.style.width = "132px";
+  qrBox.style.height = "132px";
+  qrBox.style.display = "grid";
+  qrBox.style.placeItems = "center";
+  qrBox.style.cursor = "default";
+  // Increase the visible QR size slightly while keeping it inside its frame.
+  qr.style.width = "116px";
+  qr.style.height = "116px";
+  qr.style.display = "block";
+  // Clear the previous rendering before drawing the card URL.
   qr.innerHTML = "";
-
-  // Build the correct card URL for the current hosting platform.
-  const baseUrl = new URL("../", window.location.href);
-
+  // Resolve the app root for both GitHub Pages and Vercel.
+  const appBaseUrl = new URL("../", window.location.href);
+  // Scanning this QR opens this card, not the viewer-response form.
   const cardUrl = new URL(
     "card/?guid=" + encodeURIComponent(guid),
-    baseUrl
+    appBaseUrl
   );
-
-  // Generate a slightly larger QR code.
   new QRCode(qr, {
     text: cardUrl.href,
-
     width: 180,
     height: 180,
-
     colorDark: "#062442",
     colorLight: "#ffffff",
-
     correctLevel: QRCode.CorrectLevel.H
   });
+  // Make sure the generated canvas/image uses the intended display size.
+  requestAnimationFrame(() => {
+    qr.querySelectorAll("canvas, img").forEach(element => {
+      element.style.width = "116px";
+      element.style.height = "116px";
+      element.style.maxWidth = "none";
+      element.style.display = "block";
+    });
+  });
 }
-
-
 async function shareCard(){
-
   try{
-
     if(
       navigator.share
     ){
-
       await navigator.share({
         title:
           currentCard.name||
           "Digital Visiting Card",
-
         text:
           "Digital visiting card of "+
           (
             currentCard.name||
             "this person"
           ),
-
         url:location.href
       });
-
       return;
     }
-
     await navigator.clipboard.writeText(
       location.href
     );
-
     showToast(
       "Card link copied."
     );
-
   }catch(error){
-
     if(
       error.name!=="AbortError"
     ){
-
       showToast(
         "Unable to share card.",
         true
@@ -1127,16 +887,11 @@ async function shareCard(){
     }
   }
 }
-
 function saveCardLocally(){
-
   const key=
     "digitalVisitingSavedCards";
-
   let cards=[];
-
   try{
-
     cards=
       JSON.parse(
         localStorage.getItem(
@@ -1144,15 +899,12 @@ function saveCardLocally(){
         )||
         "[]"
       );
-
   }catch(error){}
-
   if(
     !Array.isArray(cards)
   ){
     cards=[];
   }
-
   if(
     !cards.some(
       card=>
@@ -1160,40 +912,31 @@ function saveCardLocally(){
         currentCard.guid
     )
   ){
-
     cards.push({
       guid:
         currentCard.guid,
-
       name:
         currentCard.name||
         "",
-
       savedAt:
         new Date().toISOString()
     });
-
     localStorage.setItem(
       key,
       JSON.stringify(cards)
     );
-
     showToast(
       "Card saved."
     );
-
   }else{
-
     showToast(
       "Card is already saved."
     );
   }
 }
-
 function downloadVCard(
   card
 ){
-
   const name=
     String(
       card.name||
@@ -1205,7 +948,6 @@ function downloadVCard(
     )
     .trim()||
     "Contact";
-
   const lines=[
     "BEGIN:VCARD",
     "VERSION:3.0",
@@ -1220,9 +962,7 @@ function downloadVCard(
         ""
       )
   ];
-
   if(card.phone){
-
     lines.push(
       "TEL;TYPE=CELL:"+
       escapeVCard(
@@ -1230,9 +970,7 @@ function downloadVCard(
       )
     );
   }
-
   if(card.whatsapp){
-
     lines.push(
       "TEL;TYPE=WORK:"+
       escapeVCard(
@@ -1240,7 +978,6 @@ function downloadVCard(
       )
     );
   }
-
   String(
     card.emails||
     ""
@@ -1260,9 +997,7 @@ function downloadVCard(
       );
     }
   );
-
   if(card.website){
-
     lines.push(
       "URL:"+
       escapeVCard(
@@ -1270,9 +1005,7 @@ function downloadVCard(
       )
     );
   }
-
   if(card.address){
-
     lines.push(
       "ADR:;;"+
       escapeVCard(
@@ -1280,9 +1013,7 @@ function downloadVCard(
       )
     );
   }
-
   if(card.instituteName){
-
     lines.push(
       "ORG:"+
       escapeVCard(
@@ -1290,11 +1021,9 @@ function downloadVCard(
       )
     );
   }
-
   lines.push(
     "END:VCARD"
   );
-
   const url=
     URL.createObjectURL(
       new Blob(
@@ -1309,25 +1038,18 @@ function downloadVCard(
         }
       )
     );
-
   const link=
     document.createElement(
       "a"
     );
-
   link.href=url;
-
   link.download=
     name+".vcf";
-
   document.body.appendChild(
     link
   );
-
   link.click();
-
   link.remove();
-
   setTimeout(
     ()=>
       URL.revokeObjectURL(
@@ -1336,11 +1058,9 @@ function downloadVCard(
     1000
   );
 }
-
 function escapeVCard(
   value
 ){
-
   return String(
     value||
     ""
@@ -1362,21 +1082,17 @@ function escapeVCard(
     "\\,"
   );
 }
-
 function driveImageUrl(
   value
 ){
-
   const url=
     String(
       value||
       ""
     ).trim();
-
   if(!url){
     return "";
   }
-
   const match=
     url.match(
       /[?&]id=([^&]+)/i
@@ -1384,7 +1100,6 @@ function driveImageUrl(
     url.match(
       /\/d\/([^/]+)/i
     );
-
   if(
     match&&
     match[1]&&
@@ -1392,7 +1107,6 @@ function driveImageUrl(
       "drive.google.com"
     )
   ){
-
     return(
       "https://drive.google.com/thumbnail?id="+
       encodeURIComponent(
@@ -1401,21 +1115,16 @@ function driveImageUrl(
       "&sz=w1200"
     );
   }
-
   return url;
 }
-
 function directionsUrl(
   value
 ){
-
   try{
-
     const url=
       new URL(
         String(value||"")
       );
-
     const query=
       url.searchParams.get(
         "query"
@@ -1423,29 +1132,22 @@ function directionsUrl(
       url.searchParams.get(
         "q"
       );
-
     return query?
-
       "https://www.google.com/maps/dir/?api=1&destination="+
       encodeURIComponent(
         query
       ):
-
       String(value||"");
-
   }catch(error){
-
     return String(
       value||
       ""
     );
   }
 }
-
 function normalizeWebsite(
   value
 ){
-
   let v=
     String(
       value||
@@ -1456,22 +1158,17 @@ function normalizeWebsite(
       /^(https?:\/\/)+/i,
       "https://"
     );
-
   return(
     v&&
     !/^https?:\/\//i.test(v)
   )?
-
     "https://"+
     v:
-
     v;
 }
-
 function telHref(
   value
 ){
-
   return(
     "tel:"+
     String(
@@ -1484,11 +1181,9 @@ function telHref(
     )
   );
 }
-
 function digits(
   value
 ){
-
   return String(
     value||
     ""
@@ -1497,44 +1192,34 @@ function digits(
     ""
   );
 }
-
 function parseLinks(
   value
 ){
-
   if(
     Array.isArray(value)
   ){
     return value;
   }
-
   if(!value){
     return[];
   }
-
   try{
-
     const parsed=
       JSON.parse(
         value
       );
-
     return Array.isArray(
       parsed
     )?
       parsed:
       [];
-
   }catch(error){
-
     return[];
   }
 }
-
 function initials(
   name
 ){
-
   const words=
     String(
       name||
@@ -1545,29 +1230,23 @@ function initials(
       /\s+/
     )
     .filter(Boolean);
-
   if(!words.length){
     return"VC";
   }
-
   return words.length===1?
-
     words[0]
       .slice(0,2)
       .toUpperCase():
-
     (
       words[0][0]+
       words.at(-1)[0]
     ).toUpperCase();
 }
-
 function actionLink(
   type,
   url,
   label
 ){
-
   return`
     <a
       class="social-action"
@@ -1579,47 +1258,39 @@ function actionLink(
     </a>
   `;
 }
-
 function icon(
   type
 ){
-
   const icons={
-
     phone:`
       <svg viewBox="0 0 24 24">
         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 5.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L9 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/>
       </svg>
     `,
-
     whatsapp:`
       <svg viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9"/>
         <path d="M8.5 8.5c.4-.7 1-.7 1.4-.2l1 1.4c.3.4.2.8-.1 1.1l-.5.5c.8 1.4 1.8 2.4 3.2 3.2l.5-.5c.3-.3.7-.4 1.1-.1l1.4 1c.5.4.5 1 .2 1.4-.4.6-1.1.9-1.8.8-3.9-.6-7.2-3.9-7.8-7.8-.1-.7.2-1.4.8-1.8z"/>
       </svg>
     `,
-
     email:`
       <svg viewBox="0 0 24 24">
         <rect x="3" y="5" width="18" height="14" rx="2"/>
         <path d="m3 7 9 6 9-6"/>
       </svg>
     `,
-
     website:`
       <svg viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9"/>
         <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
       </svg>
     `,
-
     map:`
       <svg viewBox="0 0 24 24">
         <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/>
         <circle cx="12" cy="10" r="2.5"/>
       </svg>
     `,
-
     more:`
       <svg viewBox="0 0 24 24">
         <circle cx="5" cy="12" r="1.5"/>
@@ -1627,13 +1298,11 @@ function icon(
         <circle cx="19" cy="12" r="1.5"/>
       </svg>
     `,
-
     bookmark:`
       <svg viewBox="0 0 24 24">
         <path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-3-6 3z"/>
       </svg>
     `,
-
     share:`
       <svg viewBox="0 0 24 24">
         <circle cx="18" cy="5" r="3"/>
@@ -1642,7 +1311,6 @@ function icon(
         <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>
       </svg>
     `,
-
     contact:`
       <svg viewBox="0 0 24 24">
         <circle cx="9" cy="8" r="3"/>
@@ -1650,17 +1318,14 @@ function icon(
       </svg>
     `
   };
-
   return(
     icons[type]||
     ""
   );
 }
-
 function escapeHtml(
   value
 ){
-
   return String(
     value??
     ""
@@ -1686,27 +1351,21 @@ function escapeHtml(
     "&#039;"
   );
 }
-
 function safeAttr(
   value
 ){
-
   return escapeHtml(
     value
   );
 }
-
 function showToast(
   message,
   error=false
 ){
-
   const toast=
     $("toast");
-
   toast.textContent=
     message;
-
   toast.className=
     "toast show"+
     (
@@ -1714,11 +1373,9 @@ function showToast(
       " error":
       ""
     );
-
   clearTimeout(
     showToast.timer
   );
-
   showToast.timer=
     setTimeout(
       ()=>
@@ -1727,37 +1384,28 @@ function showToast(
       2600
     );
 }
-
 function showError(
   message
 ){
-
   $("app").className=
     "error-page";
-
   $("app").innerHTML=`
-
     <div class="error-box">
-
       <a
         class="home-link"
         href="../"
       >
         ⌂ Home
       </a>
-
       <h1>
         Unable to load card
       </h1>
-
       <p>
         ${escapeHtml(
           message||
           "Something went wrong."
         )}
       </p>
-
     </div>
-
   `;
 }
