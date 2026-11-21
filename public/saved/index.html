@@ -1,1 +1,46 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f766e"><title>Saved Cards</title><link rel="stylesheet" href="style.css"></head><body><main class="page"><header><a class="home-link" href="../">⌂ Home</a><h1>Saved Cards</h1><p>Manage the cards created in this app.</p></header><div class="toolbar"><input id="search" placeholder="Search cards..."><select id="filter"><option value="all">All Cards</option><option value="favourite">Favourites</option><option value="active">Active</option><option value="archived">Archived</option></select></div><section id="cards" class="cards"></section></main><div id="toast" class="toast"></div><script src="script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>Saved Cards</title>
+<link rel="stylesheet" href="style.css?v=4200">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+<main class="page">
+	<header>
+		<a class="home-link" href="../">⌂ Home</a>
+		<h1>Saved Cards</h1>
+		<p>Cards you saved from other people. They are kept on this device.</p>
+	</header>
+
+	<div class="toolbar">
+		<input id="search" type="search" placeholder="Search by name or institute...">
+
+		<div class="view-toggle" role="group" aria-label="Change view">
+			<button id="gridView" type="button" aria-label="Box view" aria-pressed="false">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>
+			</button>
+			<button id="listView" type="button" class="active" aria-label="List view" aria-pressed="true">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+			</button>
+		</div>
+	</div>
+
+	<section id="cards" class="cards list"></section>
+	<p id="empty" class="empty hidden">No saved cards yet. Open someone's card and press <strong>Save Card</strong>.</p>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="../common.js?v=4200"></script>
+<script src="script.js?v=4200"></script>
+<script src="../install.js?v=4200"></script>
+</body>
+</html>

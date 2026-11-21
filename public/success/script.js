@@ -16,7 +16,14 @@ if(cardUrl&&cardUrl!=="undefined"&&window.QRCode){
 }
 
 openBtn.addEventListener("click",()=>{
-    if(cardUrl&&cardUrl!=="undefined") location.href=cardUrl;
+    /* open the card on the same server you are using (not the public link) */
+    const guid=params.get("guid");
+
+    if(guid){
+        location.href="../card/?guid="+encodeURIComponent(guid);
+    }else if(cardUrl&&cardUrl!=="undefined"){
+        location.href=cardUrl;
+    }
 });
 
 copyBtn.addEventListener("click",async()=>{

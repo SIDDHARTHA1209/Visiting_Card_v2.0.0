@@ -9,10 +9,14 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta name="apple-mobile-web-app-title" content="Visiting Card">
 
+	<link rel="preconnect" href="https://script.google.com" crossorigin>
+	<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+	<link rel="preconnect" href="https://flagcdn.com" crossorigin>
 	<link rel="manifest" href="../manifest.json">
 	<link rel="icon" type="image/x-icon" href="../favicon.ico">
-	<link rel="apple-touch-icon" href="../icons/icon-192.png">
-	<link rel="stylesheet" href="style.css">
+	<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+	<link rel="stylesheet" href="style.css?v=4200">
 
 	<title>Digital Visiting Card Creator</title>
 </head>
@@ -132,17 +136,23 @@
 				<div class="contact-layout">
 
 					<div class="contact-fields">
-						<label>
-							<span class="label-text">Phone <b>*</b></span>
-							<input id="phone" name="phone" required type="tel" autocomplete="tel">
-						</label>
+						<div class="field-group">
+							<label class="label-text" for="phone">Phone <b>*</b></label>
+							<div class="phone-row">
+								<div id="phoneCountry" class="country-picker" data-default="in"></div>
+								<input id="phone" name="phone" required type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit mobile number" autocomplete="tel-national">
+							</div>
+						</div>
 
 						<div class="field-group">
 							<div class="field-label-row">
 								<label for="whatsapp">WhatsApp</label>
 								<button id="sameWhatsappButton" class="same-number-button" type="button">Same as Phone</button>
 							</div>
-							<input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel">
+							<div class="phone-row">
+								<div id="whatsappCountry" class="country-picker" data-default="in"></div>
+								<input id="whatsapp" name="whatsapp" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit WhatsApp number" autocomplete="tel-national">
+							</div>
 						</div>
 
 						<label>
@@ -194,8 +204,13 @@
 						Detect Location
 					</button>
 
+
 					<button id="viewLocation" class="button secondary" type="button">
 						View Location
+					</button>
+
+					<button id="pickLocation" class="button secondary" type="button">
+						Pick on Map
 					</button>
 				</div>
 
@@ -270,7 +285,27 @@
 
 	<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-	<script src="script.js"></script>
+	<script src="../common.js?v=4200"></script>
+	<script src="script.js?v=4200"></script>
+
+	<script>
+		/* Safety net: if an out-of-date script.js is loaded, never let Edit create a new card */
+		(function () {
+			if (!new URLSearchParams(location.search).get("edit")) return;
+			if (typeof IS_EDIT !== "undefined") return;
+
+			var bar = document.createElement("div");
+			bar.style.cssText = "background:#b00020;color:#fff;padding:12px 16px;font:600 15px sans-serif;text-align:center";
+			bar.textContent = "This page is using an old create/script.js, so editing is disabled. Replace create/script.js with the latest file and press Ctrl+Shift+R.";
+			document.body.insertBefore(bar, document.body.firstChild);
+
+			document.addEventListener("submit", function (e) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}, true);
+		})();
+	</script>
+
 
 	<script>
 		if ("serviceWorker" in navigator) {
@@ -281,5 +316,6 @@
 			});
 		}
 	</script>
+<script src="../install.js?v=4200"></script>
 </body>
 </html>

@@ -1,145 +1,279 @@
-const CONFIG={
-  API_URL:"https://script.google.com/macros/s/AKfycbxypiPlx03NxLC1riLifBALvIWLkrSSnMlkKjUXa5CajVzxVBlpxX0J0d9xGdWBMBAFWw/exec",
-  FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/"
-};
+/* safety: an older common.js must not crash this page */
+if(!DVC.storedCards){DVC.storedCards={has(){return false;},get(){return null;},set(){},remove(){},guids(){return[];},all(){return[];},owned(){return[];}};}
+if(!DVC.savedCards){DVC.savedCards={get(){return null;},set(){},remove(){},guids(){return[];},all(){return[];},has(){return false;}};}
 let currentCard=null;
 let savedCards=[];
 let flipped=false;
+let renderedJson="";
+let loadStarted=false;
+let activeGuid="";
+let switching=false;
+let selectorSignature="";
+let fitObserver=null;
+let fitFrame=0;
 const $=id=>document.getElementById(id);
+
 document.addEventListener(
   "DOMContentLoaded",
   loadCard
 );
+
+if(document.readyState!=="loading"){
+  loadCard();
+}
+
+/* Renders instantly from the localStorage copy (if this card was opened
+   before) and refreshes it from the server in the background. */
+function guidFromUrl(){
+  return new URLSearchParams(location.search).get("guid");
+}
+
 async function loadCard(){
-  const guid=
-    new URLSearchParams(
-      location.search
-    ).get("guid");
+  if(loadStarted)return;
+  loadStarted=true;
+
+  const guid=guidFromUrl();
+
   if(!guid){
-    showError(
-      "Missing card GUID."
-    );
+    /* opened without a card link (installed app, bookmark): go to the card last used on this device */
+    let fallback="";
+
+    try{
+      const last=localStorage.getItem("dvc:lastSelectedCard");
+      const own=DVC.storedCards.owned(DVC.getAppId());
+
+      fallback=(last&&DVC.storedCards.has(last)&&last)||(own[0]&&own[0].guid)||"";
+    }catch(e){}
+
+    if(fallback){
+      location.replace("?guid="+encodeURIComponent(fallback));
+      return;
+    }
+
+    showError("Missing card GUID. Open a card from the home page or scan its QR code.");
     return;
   }
+
+  await openCard(guid);
+}
+
+/* The owner's own cards, from the local copy, so the selector can show at the first paint */
+function primeOwnedCards(){
   try{
-    const data=
-      await api(
-        "?action=card&guid="+
-        encodeURIComponent(guid)
-      );
-    if(
-      !data.success||
-      !data.record
-    ){
-      throw new Error(
-        data.error||
-        "Card not found."
-      );
+    const appId=DVC.getAppId();
+    const cached=DVC.cacheGet(DVC.cardsKey(appId));
+    const list=cached&&cached.data&&cached.data.cards;
+
+    if(Array.isArray(list)&&list.length){
+      savedCards=list;
+      return;
     }
-    currentCard=
-      data.record;
-    renderCard();
-    loadOwnedCards(guid);
-  }catch(error){
-    showError(
-      error.message||
-      "Unable to load card."
+
+    const local=DVC.storedCards.owned(appId).map(x=>
+      Object.assign({ownerStatus:"Active"},x.record,{guid:x.guid})
     );
+
+    if(local.length)savedCards=local;
+  }catch(e){}
+}
+
+/* Opens one card: instantly from the local copy if there is one, then refreshes it from the server */
+async function openCard(guid){
+  activeGuid=guid;
+
+  primeOwnedCards();
+
+  /* Cards the owner has in their own list are already cached by the home page */
+  const seeded=findInOwnedCache(guid);
+
+  if(seeded&&!DVC.cacheGet("card:"+guid)){
+    DVC.cacheSet("card:"+guid,{success:true,record:seeded});
+  }
+
+  /* storedCards/<guid>: the card is kept on this device, so it opens instantly */
+  const stored=DVC.storedCards.get(guid);
+
+  if(stored&&stored.record&&!DVC.cacheGet("card:"+guid)){
+    DVC.cacheSet("card:"+guid,{success:true,record:stored.record});
+  }
+
+  try{
+    await DVC.swr(
+      "card:"+guid,
+      "?action=card&guid="+encodeURIComponent(guid),
+      data=>{
+        /* the user already picked another card */
+        if(guid!==activeGuid)return;
+
+        if(!data||!data.success||!data.record){
+          throw new Error(
+            (data&&data.error)||"Card not found."
+          );
+        }
+
+        const json=JSON.stringify(data.record);
+
+        currentCard=data.record;
+
+        /* storedCards holds only cards created on this device */
+        if(DVC.storedCards.has?DVC.storedCards.has(guid):DVC.storedCards.get(guid)){
+          DVC.storedCards.set(guid,data.record);
+        }
+
+        /* keep a saved copy fresh */
+        if(DVC.savedCards.has(guid))DVC.savedCards.set(guid,data.record,{keepTime:true});
+
+        /* do not rebuild the page (and un-flip the card) if nothing changed */
+        if(json!==renderedJson){
+          renderedJson=json;
+          renderCard();
+        }
+
+        refreshSaveButton();
+
+        $("app").classList.remove("switching");
+        switching=false;
+      },
+      {retries:1}
+    );
+
+    if(guid===activeGuid)loadOwnedCards(guid);
+  }catch(error){
+    if(guid!==activeGuid)return;
+
+    $("app").classList.remove("switching");
+
+    if(!currentCard||!switching){
+      if(!currentCard){
+        showError(
+          error.message||
+          "Unable to load card."
+        );
+      }
+    }else{
+      /* switching failed: stay on the page, go back to the card that is showing */
+      switching=false;
+      activeGuid=currentCard.guid;
+      history.replaceState(null,"","?guid="+encodeURIComponent(currentCard.guid));
+      fillCardSelector(currentCard.guid,true);
+      showToast(error.message||"Unable to load that card.",true);
+    }
   }
 }
-async function loadOwnedCards(
-  currentGuid
-){
-  const appId=
-    localStorage.getItem(
-      "digitalVisitingCardAppId"
-    );
-  if(!appId)return;
+
+/* Switch cards from the dropdown without reloading the page: the header and the dropdown stay put */
+function switchCard(guid,push){
+  if(!guid||guid===activeGuid)return;
+
+  if(push!==false){
+    history.pushState(null,"","?guid="+encodeURIComponent(guid));
+  }
+
+  flipped=false;
+  renderedJson="";
+  switching=true;
+
+  $("app").classList.add("switching");
+
+  openCard(guid);
+}
+
+window.addEventListener("popstate",()=>{
+  const guid=guidFromUrl();
+
+  if(guid&&guid!==activeGuid)switchCard(guid,false);
+});
+
+function findInOwnedCache(guid){
   try{
-    const data=
-      await api(
-        "?action=ownedcards&appId="+
-        encodeURIComponent(appId)
-      );
+    const cached=DVC.cacheGet(
+      DVC.cardsKey(DVC.getAppId())
+    );
+
+    const list=
+      cached&&cached.data&&cached.data.cards;
+
+    if(!Array.isArray(list))return null;
+
+    const card=list.find(c=>c.guid===guid);
+
+    if(!card)return null;
+
+    const record=Object.assign({},card);
+
+    delete record.ownerStatus;
+    delete record.isFavourite;
+    delete record.responseCount;
+
+    return record;
+  }catch(error){
+    return null;
+  }
+}
+
+function fillCardSelector(currentGuid,force){
+  const root=$("cardPicker");
+
+  if(!root)return;
+
+  /* do not rebuild (and close) the dropdown when nothing changed */
+  const signature=JSON.stringify([currentGuid,savedCards.map(c=>[c.guid,c.cardName,c.name,c.instituteName,c.logoUrl,c.photoUrl,c.title])]);
+
+  if(!force&&signature===selectorSignature&&root.firstChild)return;
+
+  selectorSignature=signature;
+
+  const picker=CardPicker.create(root,{
+    createHref:"../create/",
+    onSelect:guid=>switchCard(guid)
+  });
+
+  picker.setCards(savedCards,{fallback:currentCard});
+  picker.setValue(currentGuid);
+
+  $("cardSelector")
+    .classList
+    .remove("hidden");
+}
+
+/* The card list only feeds the selector, so it never blocks the card itself */
+function loadOwnedCards(currentGuid){
+  const appId=DVC.getAppId();
+
+  if(!appId)return;
+
+  const apply=data=>{
     savedCards=
-      Array.isArray(data.cards)?
+      Array.isArray(data&&data.cards)?
       data.cards:
       [];
-    const select=
-      $("cardSelect");
-    if(!select)return;
-    select.innerHTML=
-      savedCards.map(
-        card=>`
-          <option
-            value="${safeAttr(card.guid)}"
-          >
-            ${escapeHtml(
-              card.name||
-              "Untitled Card"
-            )}
-            ${
-              card.title?
-              " — "+
-              escapeHtml(
-                card.title
-              ):
-              ""
-            }
-          </option>
-        `
-      ).join("");
-    if(
-      !savedCards.some(
-        card=>
-          card.guid===
-          currentGuid
-      )
-    ){
-      select.insertAdjacentHTML(
-        "afterbegin",
-        `
-          <option
-            value="${safeAttr(currentGuid)}"
-          >
-            Current Card —
-            ${escapeHtml(
-              currentCard.name||
-              "Card"
-            )}
-          </option>
-        `
-      );
-    }
-    select.value=
-      currentGuid;
-    $("cardSelector")
-      .classList
-      .remove("hidden");
-  }catch(error){}
-}
-async function api(query){
-  const response=
-    await fetch(
-      CONFIG.API_URL+
-      query,
-      {
-        cache:"no-store"
-      }
-    );
-  const data=
-    await response.json();
-  if(
-    !response.ok||
-    data.success===false
-  ){
-    throw new Error(
-      data.error||
-      "API request failed."
-    );
+
+    fillCardSelector(currentGuid);
+    refreshEditButton();
+  };
+
+  const run=()=>{
+    DVC.swr(
+      DVC.cardsKey(appId),
+      "?action=ownedcards&appId="+
+      encodeURIComponent(appId),
+      apply,
+      {retries:0}
+    ).catch(()=>{});
+  };
+
+  /* Show the cached list straight away, refresh when the browser is idle */
+  const cached=DVC.cacheGet(DVC.cardsKey(appId));
+
+  if(cached)apply(cached.data);
+
+  if("requestIdleCallback" in window){
+    requestIdleCallback(run,{timeout:2500});
+  }else{
+    setTimeout(run,300);
   }
-  return data;
 }
+
 function renderCard(){
   const r=
     currentCard;
@@ -196,14 +330,8 @@ function renderCard(){
         id="cardSelector"
         class="card-selector hidden"
       >
-        <label
-          for="cardSelect"
-        >
-          Select Card
-        </label>
-        <select
-          id="cardSelect"
-        ></select>
+        <span class="selector-label">Select Card</span>
+        <div id="cardPicker"></div>
       </div>
       <a
         class="create-card"
@@ -227,260 +355,8 @@ function renderCard(){
           id="cardInner"
           class="card-inner"
         >
-          <!-- FRONT -->
-          <article
-            class="visiting-card card-front"
-          >
-            <div class="front-navy"></div>
-            <div class="front-gold"></div>
-            <div class="front-logo">
-              ${
-                logo?
-                `
-                  <img
-                    src="${safeAttr(logo)}"
-                    alt="Institute logo"
-                    onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"
-                  >
-                  <div
-                    class="front-logo-fallback"
-                    style="display:none"
-                  >
-                    ${escapeHtml(
-                      initials(
-                        r.instituteName||
-                        r.name
-                      )
-                    )}
-                  </div>
-                `
-                :
-                `
-                  <div
-                    class="front-logo-fallback"
-                  >
-                    ${escapeHtml(
-                      initials(
-                        r.instituteName||
-                        r.name
-                      )
-                    )}
-                  </div>
-                `
-              }
-            </div>
-            ${
-              r.instituteName?
-              `
-                <div class="front-institute">
-                  ${escapeHtml(
-                    r.instituteName
-                  )}
-                </div>
-              `
-              :
-              ""
-            }
-            <div class="front-person">
-              <h1>
-                ${escapeHtml(
-                  r.name||
-                  "Your Name"
-                )}
-              </h1>
-              ${
-                r.title?
-                `
-                  <p>
-                    ${escapeHtml(
-                      r.title
-                    )}
-                  </p>
-                `
-                :
-                ""
-              }
-            </div>
-            ${
-              photo?
-              `
-                <img
-                  class="front-profile"
-                  src="${safeAttr(photo)}"
-                  alt=""
-                  onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"
-                >
-                <div
-                  class="front-profile-fallback"
-                  style="display:none"
-                >
-                  ${escapeHtml(
-                    initials(r.name)
-                  )}
-                </div>
-              `
-              :
-              `
-                <div
-                  class="front-profile-fallback"
-                >
-                  ${escapeHtml(
-                    initials(r.name)
-                  )}
-                </div>
-              `
-            }
-            <div class="front-bottom">
-              ${
-                r.website?
-                `
-                  <span>
-                    ${escapeHtml(
-                      r.website
-                    )}
-                  </span>
-                `
-                :
-                `
-                  <span>
-                    DIGITAL CARD
-                  </span>
-                `
-              }
-              ${
-                r.phone?
-                `
-                  <div
-                    class="front-divider"
-                  ></div>
-                  <span>
-                    ${escapeHtml(
-                      r.phone
-                    )}
-                  </span>
-                `
-                :
-                ""
-              }
-            </div>
-          </article>
-          <!-- BACK -->
-          <article
-            class="visiting-card card-back"
-          >
-            <div class="back-gold"></div>
-            <div class="back-name">
-              <h2>
-                ${escapeHtml(
-                  r.name||
-                  "Your Name"
-                )}
-              </h2>
-              ${
-                r.title?
-                `
-                  <p>
-                    ${escapeHtml(
-                      r.title
-                    )}
-                  </p>
-                `
-                :
-                ""
-              }
-            </div>
-            <div
-              id="responseQr"
-              class="back-qr"
-              role="img"
-              aria-label="QR code that opens this digital visiting card"
-            >
-              <span
-                id="responseQrCode"
-                class="qr"
-              ></span>
-            </div>
-            <div class="back-contact">
-              ${
-                r.instituteName?
-                `
-                  <h3>
-                    ${escapeHtml(
-                      r.instituteName
-                    )}
-                  </h3>
-                `
-                :
-                ""
-              }
-              <p>
-                ${
-                  r.address?
-                  `
-                    ${escapeHtml(
-                      r.address
-                    )}
-                    <br>
-                  `
-                  :
-                  ""
-                }
-                ${
-                  r.phone?
-                  `
-                    ${escapeHtml(
-                      r.phone
-                    )}
-                    <br>
-                  `
-                  :
-                  ""
-                }
-                ${
-                  emails.length?
-                  `
-                    ${escapeHtml(
-                      emails[0]
-                    )}
-                    <br>
-                  `
-                  :
-                  ""
-                }
-                ${
-                  r.website?
-                  `
-                    <a
-                      href="${safeAttr(
-                        website
-                      )}"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      ${escapeHtml(
-                        r.website
-                      )}
-                    </a>
-                  `
-                  :
-                  ""
-                }
-              </p>
-            </div>
-            <div class="back-gold-bottom">
-              <span>
-                DIGITAL
-              </span>
-              <span>|</span>
-              <span>
-                CONNECT
-              </span>
-              <span>|</span>
-              <span>
-                SHARE
-              </span>
-            </div>
-          </article>
+          ${frontHtml(r,logo,photo)}
+          ${backHtml(r,emails,website)}
         </div>
       </div>
       <div class="social-actions">
@@ -498,7 +374,7 @@ function renderCard(){
           actionLink(
             "whatsapp",
             "https://wa.me/"+
-            digits(r.whatsapp),
+            waDigits(r.whatsapp),
             "WhatsApp"
           ):
           ""
@@ -562,6 +438,14 @@ function renderCard(){
           ${icon("share")}
           <span>Share Card</span>
         </button>
+        <a
+          id="editCard"
+          class="main-action hidden"
+          href="../create/?edit=${encodeURIComponent(r.guid)}"
+        >
+          ${icon("edit")}
+          <span>Edit Card</span>
+        </a>
       </div>
       <button
         id="saveContact"
@@ -656,12 +540,14 @@ function renderCard(){
   renderResponseQr(
     r.guid
   );
+  selectorSignature="";
+  fillCardSelector(currentCard.guid,true);
+  refreshEditButton();
+  setupFit();
 }
 function setupInteractions(){
   const stage=
     $("cardStage");
-  const select=
-    $("cardSelect");
   stage.addEventListener(
     "click",
     event=>{
@@ -684,18 +570,6 @@ function setupInteractions(){
       ){
         event.preventDefault();
         flipCard();
-      }
-    }
-  );
-  select?.addEventListener(
-    "change",
-    ()=>{
-      if(select.value){
-        location.href=
-          "?guid="+
-          encodeURIComponent(
-            select.value
-          );
       }
     }
   );
@@ -798,6 +672,8 @@ function setupInteractions(){
       "click",
       saveCardLocally
     );
+
+  refreshSaveButton();
 }
 function flipCard(){
   flipped=!flipped;
@@ -809,131 +685,184 @@ function flipCard(){
     );
 }
 function renderResponseQr(guid) {
-  const qr = $("responseQrCode");
-  const qrBox = $("responseQr");
-  if (!qr || !qrBox || !guid || typeof QRCode === "undefined") {
+  if (typeof QRCode === "undefined") {
+    /* library still loading from the CDN: draw as soon as it arrives */
+    DVC.whenQr(() => renderResponseQr(guid));
     return;
   }
-  // This area is a display only; clicking it must not navigate anywhere.
-  qrBox.style.width = "132px";
-  qrBox.style.height = "132px";
-  qrBox.style.display = "grid";
-  qrBox.style.placeItems = "center";
-  qrBox.style.cursor = "default";
-  // Increase the visible QR size slightly while keeping it inside its frame.
-  qr.style.width = "116px";
-  qr.style.height = "116px";
-  qr.style.display = "block";
-  // Clear the previous rendering before drawing the card URL.
+  const qr = $("responseQrCode");
+  if (!qr || !guid) {
+    return;
+  }
   qr.innerHTML = "";
-  // Resolve the app root for both GitHub Pages and Vercel.
-  const appBaseUrl = new URL("../", window.location.href);
-  // Scanning this QR opens this card, not the viewer-response form.
-  const cardUrl = new URL(
-    "card/?guid=" + encodeURIComponent(guid),
-    appBaseUrl
-  );
+  /* Scanning this QR opens the card (the public link while testing locally) */
   new QRCode(qr, {
-    text: cardUrl.href,
+    text: DVC.cardUrl(guid),
     width: 180,
     height: 180,
-    colorDark: "#062442",
+    colorDark: "#0a2342",
     colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
-  // Make sure the generated canvas/image uses the intended display size.
-  requestAnimationFrame(() => {
-    qr.querySelectorAll("canvas, img").forEach(element => {
-      element.style.width = "116px";
-      element.style.height = "116px";
-      element.style.maxWidth = "none";
-      element.style.display = "block";
-    });
+    correctLevel: QRCode.CorrectLevel.M
   });
 }
-async function shareCard(){
+function isMobileDevice(){
+  let hinted=false;
+
   try{
-    if(
-      navigator.share
-    ){
+    hinted=!!(navigator.userAgentData&&navigator.userAgentData.mobile);
+  }catch(e){}
+
+  return hinted||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function shareLink(){
+  /* the public card link (not the localhost address while testing) */
+  return DVC.cardUrl(currentCard.guid);
+}
+
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch(e){
+    try{
+      const box=document.createElement("textarea");
+
+      box.value=text;
+      box.style.cssText="position:fixed;opacity:0";
+      document.body.appendChild(box);
+      box.select();
+
+      const ok=document.execCommand("copy");
+
+      box.remove();
+
+      return ok;
+    }catch(error){
+      return false;
+    }
+  }
+}
+
+let shareBusy=false;
+
+/* Phones: the system share sheet. Computers: our own share panel (Copy link / WhatsApp / Email),
+   because the Windows system share window can freeze the browser behind a blurred screen. */
+async function shareCard(){
+  if(!currentCard||shareBusy)return;
+
+  const name=currentCard.name||"Digital Visiting Card";
+  const link=shareLink();
+
+  if(isMobileDevice()&&navigator.share){
+    shareBusy=true;
+
+    try{
       await navigator.share({
-        title:
-          currentCard.name||
-          "Digital Visiting Card",
-        text:
-          "Digital visiting card of "+
-          (
-            currentCard.name||
-            "this person"
-          ),
-        url:location.href
+        title:name,
+        text:"Digital visiting card of "+name,
+        url:link
       });
+    }catch(error){
+      if(error&&error.name!=="AbortError"){
+        openShareSheet(name,link);
+      }
+    }finally{
+      shareBusy=false;
+    }
+
+    return;
+  }
+
+  openShareSheet(name,link);
+}
+
+function openShareSheet(name,link){
+  closeShareSheet();
+
+  const text="Digital visiting card of "+name+": "+link;
+  const overlay=document.createElement("div");
+
+  overlay.id="shareSheet";
+  overlay.className="share-sheet";
+  overlay.innerHTML=`
+    <div class="share-panel" role="dialog" aria-modal="true" aria-label="Share card">
+      <div class="share-head">
+        <strong>Share card</strong>
+        <button type="button" class="share-close" aria-label="Close">×</button>
+      </div>
+      <input class="share-link" type="text" readonly value="${safeAttr(link)}">
+      <div class="share-actions">
+        <button type="button" data-share="copy">Copy link</button>
+        <a data-share="wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">WhatsApp</a>
+        <a data-share="mail" href="mailto:?subject=${encodeURIComponent(name+" - Digital Visiting Card")}&body=${encodeURIComponent(text)}">Email</a>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const input=overlay.querySelector(".share-link");
+
+  input.addEventListener("focus",()=>input.select());
+
+  overlay.addEventListener("click",async event=>{
+    if(event.target===overlay||event.target.closest(".share-close")){
+      closeShareSheet();
       return;
     }
-    await navigator.clipboard.writeText(
-      location.href
-    );
-    showToast(
-      "Card link copied."
-    );
-  }catch(error){
-    if(
-      error.name!=="AbortError"
-    ){
-      showToast(
-        "Unable to share card.",
-        true
-      );
+
+    if(event.target.closest('[data-share="copy"]')){
+      const ok=await copyText(link);
+
+      showToast(ok?"Card link copied.":"Could not copy. Select the link and copy it.",!ok);
+
+      if(ok)closeShareSheet();
     }
-  }
+  });
+
+  document.addEventListener("keydown",shareSheetKey);
 }
+
+function shareSheetKey(event){
+  if(event.key==="Escape")closeShareSheet();
+}
+
+function closeShareSheet(){
+  const old=document.getElementById("shareSheet");
+
+  if(old)old.remove();
+
+  document.removeEventListener("keydown",shareSheetKey);
+}
+function refreshSaveButton(){
+  const button=$("saveCard");
+
+  if(!button||!currentCard)return;
+
+  const saved=DVC.savedCards.has(currentCard.guid);
+  const label=button.querySelector("span");
+
+  if(label)label.textContent=saved?"Saved":"Save Card";
+
+  button.classList.toggle("is-saved",saved);
+}
+
+/* Save Card: keeps this card in savedCards/<guid> on this device */
 function saveCardLocally(){
-  const key=
-    "digitalVisitingSavedCards";
-  let cards=[];
-  try{
-    cards=
-      JSON.parse(
-        localStorage.getItem(
-          key
-        )||
-        "[]"
-      );
-  }catch(error){}
-  if(
-    !Array.isArray(cards)
-  ){
-    cards=[];
+  if(!currentCard)return;
+
+  if(DVC.savedCards.has(currentCard.guid)){
+    DVC.savedCards.remove(currentCard.guid);
+    refreshSaveButton();
+    showToast("Removed from Saved Cards.");
+    return;
   }
-  if(
-    !cards.some(
-      card=>
-        card.guid===
-        currentCard.guid
-    )
-  ){
-    cards.push({
-      guid:
-        currentCard.guid,
-      name:
-        currentCard.name||
-        "",
-      savedAt:
-        new Date().toISOString()
-    });
-    localStorage.setItem(
-      key,
-      JSON.stringify(cards)
-    );
-    showToast(
-      "Card saved."
-    );
-  }else{
-    showToast(
-      "Card is already saved."
-    );
-  }
+
+  DVC.savedCards.set(currentCard.guid,currentCard);
+  refreshSaveButton();
+  showToast("Saved. Find it in Saved Cards on the home page.");
 }
+
 function downloadVCard(
   card
 ){
@@ -1181,6 +1110,13 @@ function telHref(
     )
   );
 }
+function waDigits(value){
+  const raw=String(value||"").trim().replace(/\.0+$/,"");
+  const d=raw.replace(/\D/g,"");
+
+  /* older cards were saved without a country code */
+  return(!raw.startsWith("+")&&d.length===10)?"91"+d:d;
+}
 function digits(
   value
 ){
@@ -1311,6 +1247,12 @@ function icon(
         <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>
       </svg>
     `,
+    edit:`
+      <svg viewBox="0 0 24 24">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>
+      </svg>
+    `,
     contact:`
       <svg viewBox="0 0 24 24">
         <circle cx="9" cy="8" r="3"/>
@@ -1408,4 +1350,187 @@ function showError(
       </p>
     </div>
   `;
+}
+
+
+/* =========================================================
+   CARD FACES
+   ========================================================= */
+
+function frontHtml(r,logo,photo){
+  const logoInitials=escapeHtml(initials(r.instituteName||r.name));
+  const photoInitials=escapeHtml(initials(r.name));
+
+  const logoBlock=logo?
+    `<img src="${safeAttr(logo)}" alt="Institute logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+     <div class="front-logo-fallback" style="display:none">${logoInitials}</div>`:
+    `<div class="front-logo-fallback">${logoInitials}</div>`;
+
+  const photoBlock=photo?
+    `<img class="front-profile" src="${safeAttr(photo)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+     <div class="front-profile-fallback" style="display:none">${photoInitials}</div>`:
+    `<div class="front-profile-fallback">${photoInitials}</div>`;
+
+  const bottom=[
+    r.website?escapeHtml(r.website):"DIGITAL CARD",
+    r.phone?escapeHtml(r.phone):""
+  ].filter(Boolean);
+
+  return`
+    <article class="visiting-card card-front">
+      <div class="front-navy"></div>
+      <div class="front-gold"></div>
+      <div class="front-logo">${logoBlock}</div>
+      ${r.instituteName?`<div class="front-institute fit-box"><span>${escapeHtml(r.instituteName)}</span></div>`:""}
+      <div class="front-rule"></div>
+      <div class="front-person fit-box">
+        <h1>${escapeHtml(r.name||"Your Name")}</h1>
+        ${r.title?`<p>${escapeHtml(r.title)}</p>`:""}
+      </div>
+      ${photoBlock}
+      <div class="front-bottom fit-box">
+        ${bottom.map(t=>`<span>${t}</span>`).join('<i class="front-divider"></i>')}
+      </div>
+    </article>`;
+}
+
+function backHtml(r,emails,website){
+  const info=[];
+
+  if(r.instituteName){
+    info.push(`<h3>${escapeHtml(r.instituteName)}</h3>`);
+  }
+
+  if(r.address){
+    info.push(`<div class="c-line">${escapeHtml(r.address)}</div>`);
+  }
+
+  if(r.phone){
+    info.push(`<div class="c-line">${escapeHtml(r.phone)}</div>`);
+  }
+
+  if(emails.length){
+    info.push(`<div class="c-line">${escapeHtml(emails[0])}</div>`);
+  }
+
+  if(r.website){
+    info.push(`<a class="c-line" href="${safeAttr(website)}" target="_blank" rel="noopener">${escapeHtml(r.website)}</a>`);
+  }
+
+  return`
+    <article class="visiting-card card-back">
+      <div class="back-gold"></div>
+      <div class="back-name fit-box">
+        <h2>${escapeHtml(r.name||"Your Name")}</h2>
+        ${r.title?`<p>${escapeHtml(r.title)}</p>`:""}
+      </div>
+      <div id="responseQr" class="back-qr" role="img" aria-label="QR code that opens this digital visiting card">
+        <span id="responseQrCode" class="qr"></span>
+      </div>
+      <div class="back-contact"></div>
+      <div class="back-info fit-box">${info.join("")}</div>
+      <div class="back-gold-bottom">
+        <span>DIGITAL</span><span>|</span><span>CONNECT</span><span>|</span><span>SHARE</span>
+      </div>
+    </article>`;
+}
+
+/* =========================================================
+   AUTO-FIT TEXT
+   Every .fit-box has a fixed size on the card. Its font size starts at the
+   design size and is reduced until all of its text fits inside the box.
+   ========================================================= */
+
+
+function boxOverflows(box){
+  return box.scrollHeight>box.clientHeight+1||
+    box.scrollWidth>box.clientWidth+1;
+}
+
+function fitAll(){
+  const stage=$("cardStage");
+
+  if(!stage)return;
+
+  const width=stage.clientWidth;
+
+  if(!width)return;
+
+  stage.style.setProperty("--cw",width);
+
+  stage.querySelectorAll(".fit-box").forEach(box=>{
+    box.style.fontSize="";
+
+    if(!boxOverflows(box))return;
+
+    const max=parseFloat(getComputedStyle(box).fontSize)||16;
+
+    let low=Math.max(5,max*0.3);
+    let high=max;
+
+    for(let i=0;i<10;i++){
+      const mid=(low+high)/2;
+
+      box.style.fontSize=mid+"px";
+
+      if(boxOverflows(box))high=mid;
+      else low=mid;
+    }
+
+    box.style.fontSize=low+"px";
+  });
+}
+
+function scheduleFit(){
+  cancelAnimationFrame(fitFrame);
+  fitFrame=requestAnimationFrame(fitAll);
+}
+
+function setupFit(){
+  const stage=$("cardStage");
+
+  if(!stage)return;
+
+  if(fitObserver)fitObserver.disconnect();
+
+  fitAll();
+  scheduleFit();
+
+  /* web fonts and images can change text widths after the first paint */
+  if(document.fonts&&document.fonts.ready){
+    document.fonts.ready.then(scheduleFit);
+    document.fonts.addEventListener&&document.fonts.addEventListener("loadingdone",scheduleFit);
+  }
+
+  /* late layout changes (fonts, images, orientation): re-fit a few times */
+  [250,800,2000].forEach(ms=>setTimeout(scheduleFit,ms));
+  window.addEventListener("orientationchange",()=>setTimeout(scheduleFit,200));
+
+  window.addEventListener("load",scheduleFit,{once:true});
+
+  if("ResizeObserver" in window){
+    fitObserver=new ResizeObserver(scheduleFit);
+    fitObserver.observe(stage);
+  }else{
+    window.addEventListener("resize",scheduleFit);
+  }
+}
+
+/* The Edit button only shows on a device that owns the card.
+   (The server checks ownership again when the change is saved.) */
+function refreshEditButton(){
+  const button=$("editCard");
+
+  if(!button||!currentCard)return;
+
+  let owned=savedCards.some(card=>card.guid===currentCard.guid);
+
+  if(!owned){
+    const cached=DVC.cacheGet(DVC.cardsKey(DVC.getAppId()));
+    const list=cached&&cached.data&&cached.data.cards;
+
+    owned=Array.isArray(list)&&list.some(card=>card.guid===currentCard.guid);
+  }
+
+  button.classList.toggle("hidden",!owned);
 }

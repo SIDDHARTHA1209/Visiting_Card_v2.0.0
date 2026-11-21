@@ -8,6 +8,8 @@ const CONFIG={
   FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/",
   MAX_UPLOAD_BYTES:9000000,
   CACHE_SECONDS:21600,
+  OWNED_CACHE_SECONDS:300,
+  COMPANY_MAP_CACHE_SECONDS:3600,
   HEADER_CACHE_SECONDS:3600
 };
 
@@ -22,7 +24,7 @@ const COMPANY_HEADERS=[
 ];
 
 const OWNER_HEADERS=[
-  "appId","guid","createdAt","status","isFavourite"
+	"appId","guid","cardName","createdAt","status","isFavourite"
 ];
 const RESPONSE_HEADERS=[
   "responseId","cardGuid","appId","viewerName","phone","whatsapp","email","company","message","createdAt"
@@ -77,6 +79,7 @@ function doPost(e){
     const action=String(body.action||"").toLowerCase();
 
     if(action==="submit")return json_(submitCard_(body));
+    if(action==="update")return json_(updateCard_(body));
     if(action==="submitresponse")return json_(submitViewerResponse_(body));
     if(action==="favourite")return json_(updateOwnerField_(body,"isFavourite"));
     if(action==="status")return json_(updateOwnerField_(body,"status"));
@@ -108,20 +111,6 @@ function submitCard_(p){
   const logoUrl=handleImage_(p.logoImage,"logo",guid);
   const photoUrl=handleImage_(p.photoImage,"photo",guid);
 
-  let company=null;
-
-  if(clean_(p.instituteName)){
-    company=upsertCompany_({
-      companyName:p.instituteName,
-      tagline:p.tagline,
-      description:p.companyDescription,
-      address:p.address,
-      website:p.website,
-      logoUrl:logoUrl,
-      locationLink:p.locationLink
-    });
-  }
-
   const customLinks=normalizeCustomLinks_(p.customLinks);
 
   const record={
@@ -143,24 +132,53 @@ function submitCard_(p){
   };
 
   const cardUrl=buildCardUrl_(guid);
+  let company=null;
 
-  sheet.appendRow(
-    HEADERS.map(function(header){
-      return record[header]||"";
-    })
-  );
+  /* Only the sheet writes are locked, so two people submitting at the same
+     moment cannot overwrite each other's rows (the slow image upload above
+     stays outside the lock). */
+  withLock_(function(){
+    if(clean_(p.instituteName)){
+      company=upsertCompany_({
+        companyName:p.instituteName,
+        tagline:p.tagline,
+        description:p.companyDescription,
+        address:p.address,
+        website:p.website,
+        logoUrl:logoUrl,
+        locationLink:p.locationLink
+      });
+    }
 
-  ownerSheet.appendRow([
-    appId,
-    guid,
-    createdAt,
-    "Active",
-    "false"
-  ]);
+    appendRowAsText_(
+      sheet,
+      HEADERS.map(function(header){
+        return record[header]||"";
+      }),
+      ["phone","whatsapp"],
+      HEADERS
+    );
+
+    ownerSheet.appendRow([
+      appId,
+      guid,
+      clean_(p.cardName),
+      createdAt,
+      "Active",
+      "false"
+    ]);
+  });
+
+  invalidateOwnedCache_(appId);
+  invalidateCompanyMap_();
+
+  /* the cached record carries the company description, so reading a card
+     never has to touch the CompanyMaster sheet again */
+  record.companyDescription=company?clean_(company.description):"";
 
   CacheService.getScriptCache().put(
     "card:"+guid,
-    JSON.stringify(record),
+    JSON.stringify(Object.assign({},record,{customLinks:customLinks})),
     CONFIG.CACHE_SECONDS
   );
 
@@ -172,6 +190,146 @@ function submitCard_(p){
     appId:appId,
     cardUrl:cardUrl,
     companyId:company?company.companyId:"",
+    record:record
+  };
+}
+
+/* Edit an existing card. Only the device (appId) that created the card may do this. */
+function updateCard_(p){
+  const errors=validatePayload_(p);
+
+  if(errors.length){
+    throw new Error(errors.join(" "));
+  }
+
+  validateConfiguration_();
+
+  const appId=clean_(p.appId);
+  const guid=clean_(p.guid);
+
+  if(!guid){
+    throw new Error("Card ID is required.");
+  }
+
+  /* refuse early, before anything is uploaded to Drive */
+  if(!getOwnedGuidSet_(appId)[guid]){
+    throw new Error("You can only edit cards that were created on this device.");
+  }
+
+  /* new images are uploaded first, outside the lock (slow) */
+  const newLogo=handleImage_(p.logoImage,"logo",guid);
+  const newPhoto=handleImage_(p.photoImage,"photo",guid);
+
+  const customLinks=normalizeCustomLinks_(p.customLinks);
+  let record=null;
+  let company=null;
+
+  withLock_(function(){
+    const ownerSheet=getOwnerSheet_();
+    const ownerValues=ownerSheet.getDataRange().getValues();
+    const ownerAppIndex=OWNER_HEADERS.indexOf("appId");
+    const ownerGuidIndex=OWNER_HEADERS.indexOf("guid");
+    const ownerNameIndex=OWNER_HEADERS.indexOf("cardName");
+    let ownerRow=-1;
+
+    for(let i=1;i<ownerValues.length;i++){
+      if(
+        clean_(ownerValues[i][ownerAppIndex])===appId&&
+        clean_(ownerValues[i][ownerGuidIndex])===guid
+      ){
+        ownerRow=i+1;
+        break;
+      }
+    }
+
+    if(ownerRow<0){
+      throw new Error("You can only edit cards that were created on this device.");
+    }
+
+    const sheet=getSheet_();
+    const values=sheet.getDataRange().getValues();
+    const guidIndex=HEADERS.indexOf("guid");
+    let rowNumber=-1;
+
+    for(let i=1;i<values.length;i++){
+      if(String(values[i][guidIndex])===guid){
+        rowNumber=i+1;
+        values.existing=rowToRecord_(values[i]);
+        break;
+      }
+    }
+
+    if(rowNumber<0){
+      throw new Error("Card not found.");
+    }
+
+    const existing=values.existing;
+
+    const logoUrl=newLogo||(p.removeLogo===true?"":existing.logoUrl);
+    const photoUrl=newPhoto||(p.removePhoto===true?"":existing.photoUrl);
+
+    if(clean_(p.instituteName)){
+      company=upsertCompany_({
+        companyName:p.instituteName,
+        tagline:existing.tagline,
+        description:p.companyDescription,
+        address:p.address,
+        website:p.website,
+        logoUrl:logoUrl,
+        locationLink:p.locationLink
+      });
+    }
+
+    record={
+      guid:guid,
+      name:clean_(p.name),
+      title:clean_(p.title),
+      instituteName:clean_(p.instituteName),
+      tagline:existing.tagline,
+      address:clean_(p.address),
+      website:normalizeUrl_(p.website),
+      phone:clean_(p.phone),
+      whatsapp:clean_(p.whatsapp),
+      emails:clean_(p.emails),
+      logoUrl:logoUrl,
+      photoUrl:photoUrl,
+      locationLink:normalizeUrl_(p.locationLink),
+      customLinks:JSON.stringify(customLinks),
+      createdAt:existing.createdAt
+    };
+
+    ["phone","whatsapp"].forEach(function(header){
+      sheet.getRange(rowNumber,HEADERS.indexOf(header)+1).setNumberFormat("@");
+    });
+
+    sheet.getRange(rowNumber,1,1,HEADERS.length).setValues([
+      HEADERS.map(function(header){
+        return record[header]||"";
+      })
+    ]);
+
+    if(ownerNameIndex>=0){
+      ownerSheet.getRange(ownerRow,ownerNameIndex+1).setValue(clean_(p.cardName));
+    }
+  });
+
+  record.customLinks=customLinks;
+  record.companyDescription=company?clean_(company.description):"";
+
+  /* the next read of this card (and of the owner's list) must see the edit */
+  CacheService.getScriptCache().put(
+    "card:"+guid,
+    JSON.stringify(record),
+    CONFIG.CACHE_SECONDS
+  );
+
+  invalidateOwnedCache_(appId);
+  invalidateCompanyMap_();
+
+  return{
+    success:true,
+    guid:guid,
+    appId:appId,
     record:record
   };
 }
@@ -192,7 +350,10 @@ function getCard_(guid){
 
   if(cached){
     const record=JSON.parse(cached);
-    attachCompanyDescription_(record);
+
+    if(record.companyDescription===undefined){
+      attachCompanyDescription_(record);
+    }
 
     return{
       success:true,
@@ -250,6 +411,13 @@ function getOwnedCards_(appId){
     };
   }
 
+  const cache=CacheService.getScriptCache();
+  const cachedResult=cache.get(ownedCacheKey_(appId));
+
+  if(cachedResult){
+    return JSON.parse(cachedResult);
+  }
+
   const ownerSheet=getOwnerSheet_();
   const cardSheet=getSheet_();
 
@@ -274,6 +442,7 @@ function getOwnedCards_(appId){
 
   const ownerGuidIndex=OWNER_HEADERS.indexOf("guid");
   const ownerAppIdIndex=OWNER_HEADERS.indexOf("appId");
+  const ownerCardNameIndex=OWNER_HEADERS.indexOf("cardName");
   const ownerStatusIndex=OWNER_HEADERS.indexOf("status");
   const ownerFavouriteIndex=OWNER_HEADERS.indexOf("isFavourite");
 
@@ -291,6 +460,7 @@ function getOwnedCards_(appId){
   }
 
   const responseCounts=getResponseCounts_();
+  const companyMap=getCompanyDescriptionMap_();
   const cards=[];
 
   for(let i=1;i<ownerValues.length;i++){
@@ -318,10 +488,11 @@ function getOwnedCards_(appId){
 
     const card=cardsByGuid[guid];
 
-    attachCompanyDescription_(card);
+    attachCompanyDescription_(card,companyMap);
 
     cards.push({
       ...card,
+      cardName:clean_(row[ownerCardNameIndex]),
       ownerStatus:status,
       isFavourite:
         String(row[ownerFavouriteIndex]||"false")
@@ -330,12 +501,58 @@ function getOwnedCards_(appId){
     });
   }
 
-  return{
+  const result={
     success:true,
     appId:appId,
     count:cards.length,
     cards:cards
   };
+
+  try{
+    cache.put(
+      ownedCacheKey_(appId),
+      JSON.stringify(result),
+      CONFIG.OWNED_CACHE_SECONDS
+    );
+  }catch(e){
+    /* result larger than the cache entry limit: just skip caching */
+  }
+
+  return result;
+}
+
+function ownedCacheKey_(appId){
+  return"owned:"+appId;
+}
+
+function invalidateOwnedCache_(appId){
+  try{
+    CacheService.getScriptCache().remove(ownedCacheKey_(appId));
+  }catch(e){}
+}
+
+function invalidateCompanyMap_(){
+  try{
+    CacheService.getScriptCache().remove("companyMap");
+  }catch(e){}
+}
+
+/* Runs fn while holding the script lock (prevents two requests writing the
+   same sheet at once). */
+function withLock_(fn){
+  const lock=LockService.getScriptLock();
+
+  try{
+    lock.waitLock(25000);
+  }catch(e){
+    throw new Error("The server is busy. Please try again in a moment.");
+  }
+
+  try{
+    return fn();
+  }finally{
+    lock.releaseLock();
+  }
 }
 
 
@@ -382,7 +599,6 @@ function submitViewerResponse_(p){
   if(errors.length)throw new Error(errors.join(" "));
   const owner=getOwnerForGuid_(guid);
   if(!owner)throw new Error("Card owner not found.");
-  getCard_(guid);
   const sheet=getResponseSheet_();
   const responseId=Utilities.getUuid();
   const createdAt=new Date().toISOString();
@@ -398,7 +614,10 @@ function submitViewerResponse_(p){
     message:clean_(p.message),
     createdAt:createdAt
   };
-  sheet.appendRow(RESPONSE_HEADERS.map(function(header){return record[header]||"";}));
+  withLock_(function(){
+    appendRowAsText_(sheet,RESPONSE_HEADERS.map(function(header){return record[header]||"";}),["phone","whatsapp"],RESPONSE_HEADERS);
+  });
+  invalidateOwnedCache_(owner.appId);
   return{success:true,responseId:responseId,cardGuid:guid,createdAt:createdAt};
 }
 
@@ -449,6 +668,7 @@ function updateOwnerField_(p,field){
   const appId=clean_(p.appId);
   const guid=clean_(p.guid);
   if(!appId||!guid)throw new Error("App ID and card GUID are required.");
+  return withLock_(function(){
   const sheet=getOwnerSheet_();
   const values=sheet.getDataRange().getValues();
   const appIndex=OWNER_HEADERS.indexOf("appId");
@@ -460,10 +680,12 @@ function updateOwnerField_(p,field){
       if(field==="isFavourite")value=String(value).toLowerCase()==="true"?"true":"false";
       if(field==="status")value=value==="Archived"?"Archived":"Active";
       sheet.getRange(i+1,fieldIndex+1).setValue(value);
+      invalidateOwnedCache_(appId);
       return{success:true,guid:guid,field:field,value:value};
     }
   }
   throw new Error("Owned card not found.");
+  });
 }
 
 function getResponseSheet_(){
@@ -475,41 +697,48 @@ function getResponseSheet_(){
   return sheet;
 }
 
-function attachCompanyDescription_(record){
-  if(!record||!record.instituteName){
-    record.companyDescription="";
-    return record;
+/* normalizedCompanyName -> description, read from the sheet once and cached */
+function getCompanyDescriptionMap_(){
+  const cache=CacheService.getScriptCache();
+  const cached=cache.get("companyMap");
+
+  if(cached){
+    return JSON.parse(cached);
   }
 
+  const map={};
   const sheet=getCompanySheet_();
   const values=sheet.getDataRange().getValues();
+  const nameIndex=COMPANY_HEADERS.indexOf("companyName");
+  const descIndex=COMPANY_HEADERS.indexOf("description");
 
-  if(values.length<2){
-    record.companyDescription="";
+  for(let i=1;i<values.length;i++){
+    const key=normalizeCompanyName_(values[i][nameIndex]);
+
+    if(key)map[key]=String(values[i][descIndex]||"");
+  }
+
+  try{
+    cache.put(
+      "companyMap",
+      JSON.stringify(map),
+      CONFIG.COMPANY_MAP_CACHE_SECONDS
+    );
+  }catch(e){}
+
+  return map;
+}
+
+function attachCompanyDescription_(record,map){
+  if(!record||!record.instituteName){
+    if(record)record.companyDescription="";
     return record;
   }
 
-  const nameIndex=COMPANY_HEADERS.indexOf("companyName");
-  const normalizedName=normalizeCompanyName_(
-    record.instituteName
-  );
+  map=map||getCompanyDescriptionMap_();
 
-  for(let i=1;i<values.length;i++){
-    const existingName=normalizeCompanyName_(
-      values[i][nameIndex]
-    );
-
-    if(existingName===normalizedName){
-      const company=companyRowToObject_(values[i]);
-
-      record.companyDescription=
-        company.description||"";
-
-      return record;
-    }
-  }
-
-  record.companyDescription="";
+  record.companyDescription=
+    map[normalizeCompanyName_(record.instituteName)]||"";
 
   return record;
 }
@@ -669,7 +898,9 @@ function ensureHeaders_(sheet,headers,cachePrefix){
       range.setValues([headers]);
     }else{
       throw new Error(
-        "Sheet header row does not match the required schema."
+        "Header mismatch in sheet: "+sheet.getName()+
+        ". Expected: "+headers.join(", ")+
+        ". Found: "+current.join(", ")
       );
     }
   }
@@ -941,6 +1172,12 @@ function validatePayload_(p){
 
   if(!clean_(p.phone)){
     errors.push("Phone number is required.");
+  }else if(!isValidPhone_(p.phone)){
+    errors.push("Phone number must be exactly 10 digits.");
+  }
+
+  if(clean_(p.whatsapp)&&!isValidPhone_(p.whatsapp)){
+    errors.push("WhatsApp number must be exactly 10 digits.");
   }
 
   if(
@@ -1160,6 +1397,26 @@ function isValidUrl_(url){
   }
 }
 
+/* Accepts "+91 9876543210" or a plain 10-digit number. */
+function isValidPhone_(value){
+  return /^(\+\d{1,4}[\s-]?)?\d{10}$/.test(clean_(value));
+}
+
+/* Appends a row and forces the given columns to plain text so that
+   Sheets does not turn "+91 9876543210" into a number. */
+function appendRowAsText_(sheet,values,textHeaders,headers){
+  const row=sheet.getLastRow()+1;
+
+  textHeaders.forEach(function(header){
+    const col=headers.indexOf(header)+1;
+    if(col>0){
+      sheet.getRange(row,col).setNumberFormat("@");
+    }
+  });
+
+  sheet.getRange(row,1,1,values.length).setValues([values]);
+}
+
 function clean_(value){
   return String(
     value===undefined||value===null?
@@ -1276,4 +1533,45 @@ function json_(data){
 function testOwnerSheet(){
   const sheet=getOwnerSheet_();
   Logger.log("Owner sheet created/found: "+sheet.getName());
+}
+
+
+
+function diagnoseSheetHeaders() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+  const sheets = [
+    { name: CONFIG.SHEET_NAME, headers: HEADERS },
+    { name: CONFIG.OWNER_SHEET_NAME, headers: OWNER_HEADERS },
+    { name: CONFIG.COMPANY_SHEET_NAME, headers: COMPANY_HEADERS },
+    { name: CONFIG.RESPONSE_SHEET_NAME, headers: RESPONSE_HEADERS }
+  ];
+
+  const report = sheets.map(function (item) {
+    const sheet = ss.getSheetByName(item.name);
+
+    if (!sheet) {
+      return item.name + ": SHEET NOT FOUND";
+    }
+
+    const actual = sheet
+      .getRange(1, 1, 1, item.headers.length)
+      .getDisplayValues()[0]
+      .map(function (value) {
+        return String(value).trim();
+      });
+
+    const matches = item.headers.every(function (header, index) {
+      return actual[index] === header;
+    });
+
+    return [
+      "Sheet: " + item.name,
+      "Status: " + (matches ? "OK" : "MISMATCH"),
+      "Expected: " + item.headers.join(" | "),
+      "Actual: " + actual.join(" | ")
+    ].join("\n");
+  });
+
+  Logger.log(report.join("\n\n--------------------\n\n"));
 }

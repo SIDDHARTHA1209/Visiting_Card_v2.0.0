@@ -1,110 +1,178 @@
-const CONFIG={
-  API_URL:"https://script.google.com/macros/s/AKfycbxypiPlx03NxLC1riLifBALvIWLkrSSnMlkKjUXa5CajVzxVBlpxX0J0d9xGdWBMBAFWw/exec",
-  FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/"
-};
+/* safety: an older common.js must not crash this page */
+if(!DVC.storedCards){DVC.storedCards={get(){return null;},set(){},remove(){},guids(){return[];},all(){return[];},owned(){return[];}};}
+if(!DVC.savedCards){DVC.savedCards={get(){return null;},set(){},remove(){},guids(){return[];},all(){return[];},has(){return false;}};}
+/* Home page */
 
-const APP_KEY="digitalVisitingCardAppId";
+const LAST_CARD_KEY="lastSelectedCard";
 
 let appId="";
 let cards=[];
 let selectedCard=null;
+let loadedOnce=false;
+let started=false;
+let picker=null;
 
 const $=id=>document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded",init);
 
-async function init(){
-  appId=localStorage.getItem(APP_KEY)||generateAppId();
-  localStorage.setItem(APP_KEY,appId);
-
-  bind();
-  await loadCards();
+/* `defer` scripts run after parsing, so DOMContentLoaded may already be done */
+if(document.readyState!=="loading"){
+  init();
 }
 
-function generateAppId(){
-  return crypto?.randomUUID
-    ?crypto.randomUUID()
-    :"APP-"+Date.now()+"-"+Math.random().toString(36).slice(2,12);
+function init(){
+  if(started)return;
+  started=true;
+
+  adoptKeyFromUrl();
+
+  appId=DVC.getAppId();
+
+  picker=CardPicker.create($("cardPicker"),{
+    createHref:"create/",
+    onSelect:onPick
+  });
+
+  bind();
+  bindSync();
+  loadCards();
+}
+
+function onPick(guid){
+  selectedCard=cards.find(card=>card.guid===guid)||null;
+
+  if(selectedCard){
+    DVC.lsSet("dvc:"+LAST_CARD_KEY,selectedCard.guid);
+  }
+
+  renderSelected();
 }
 
 function bind(){
-  $("cardSelect").addEventListener("change",()=>{
-    const guid=$("cardSelect").value;
+  $("swapQrButton").addEventListener("click",swapQr);
 
-    selectedCard=
-      cards.find(card=>card.guid===guid)||null;
+  $("copyLinkButton").addEventListener("click",copyCardLink);
 
-    renderSelected();
+  $("savedCardsButton").addEventListener("click",()=>{
+    location.href="saved/";
   });
 
-  $("viewResponsesButton").addEventListener("click",()=>{
-    if(!selectedCard)return;
-
-    location.href=
-      "responses/?guid="+
-      encodeURIComponent(selectedCard.guid);
-  });
+  updateSavedBadge();
 }
 
+/* Instant render from the localStorage copy, then refresh in the background */
 async function loadCards(){
-  try{
-    const response=await fetch(
-      CONFIG.API_URL+
-      "?action=ownedcards&appId="+
-      encodeURIComponent(appId),
-      {cache:"no-store"}
+  const cached=DVC.cacheGet(DVC.cardsKey(appId));
+
+  if(!cached){
+    /* show the cards stored on this device (storedCards/<guid>) straight away */
+    const local=DVC.storedCards.owned(appId).map(x=>
+      Object.assign({ownerStatus:"Active",isFavourite:false,responseCount:0},x.record,{guid:x.guid})
     );
 
-    const data=await response.json();
-
-    if(!data.success){
-      throw new Error(
-        data.error||"Unable to load cards."
-      );
-    }
-
-    cards=Array.isArray(data.cards)
-      ?data.cards
-      :[];
-
-    renderCardSelector();
-
-    if(cards.length){
-      selectedCard=cards[0];
-      renderSelected();
+    if(local.length){
+      applyCards({success:true,cards:local,local:true});
     }else{
-      renderEmpty();
+      showLoading("Loading your cards…");
     }
-
-  }catch(error){
-    showToast(
-      error.message||"Unable to load cards.",
-      true
-    );
-
-    renderEmpty();
   }
+
+  try{
+    await DVC.swr(
+      DVC.cardsKey(appId),
+      "?action=ownedcards&appId="+encodeURIComponent(appId),
+      applyCards,
+      {retries:1}
+    );
+  }catch(error){
+    hideLoading();
+
+    showToast(error.message||"Unable to load cards.",true);
+
+    if(!cards.length)renderEmpty(true);
+  }
+}
+
+function applyCards(data){
+  const list=Array.isArray(data&&data.cards)?data.cards:[];
+
+  /* keep every card on this device in storedCards/<guid> */
+  list.forEach(card=>{
+    if(card&&card.guid)DVC.storedCards.set(card.guid,card,{owned:true,appId:appId});
+  });
+
+  /* remove owned copies that no longer exist on the server */
+  if(data&&data.success&&data.fromServer!==false){
+    const live=new Set(list.map(card=>card.guid));
+
+    DVC.storedCards.owned(appId).forEach(x=>{
+      if(!live.has(x.guid)&&data.cards&&!data.local)DVC.storedCards.remove(x.guid);
+    });
+  }
+
+  /* Only active cards are offered on the home page */
+  cards=list.filter(card=>(card.ownerStatus||"Active")!=="Archived");
+
+  hideLoading();
+
+  const previous=
+    (selectedCard&&selectedCard.guid)||
+    DVC.lsGet("dvc:"+LAST_CARD_KEY)||
+    "";
+
+  const keepSelection=cards.find(card=>card.guid===previous);
+
+  const next=keepSelection||cards[0]||null;
+
+  /* A background refresh must not reset the QR the user is looking at */
+  const sameCard=
+    selectedCard&&next&&selectedCard.guid===next.guid;
+
+  selectedCard=next;
+
+  renderCardSelector();
+
+  if(!cards.length){
+    renderEmpty(false);
+    return;
+  }
+
+  if(sameCard&&loadedOnce){
+    refreshSelectedMeta();
+  }else{
+    renderSelected();
+  }
+
+  loadedOnce=true;
+}
+
+function showLoading(text){
+  $("loadingText").textContent=text;
+  $("loadingState").classList.remove("hidden");
+  $("emptyState").classList.add("hidden");
+}
+
+function hideLoading(){
+  $("loadingState").classList.add("hidden");
 }
 
 function renderCardSelector(){
-  const select=$("cardSelect");
+  picker.setCards(cards);
 
-  select.innerHTML=
-    '<option value="">-- Choose a Card --</option>'+
-    cards.map(card=>
-      '<option value="'+
-      safeAttr(card.guid)+
-      '">'+
-      escapeHtml(card.name||"Untitled Card")+
-      (card.title
-        ?" — "+escapeHtml(card.title)
-        :"")+
-      "</option>"
-    ).join("");
+  picker.setValue(selectedCard?selectedCard.guid:"");
+}
 
-  if(selectedCard){
-    select.value=selectedCard.guid;
-  }
+function updateSavedBadge(){
+  const count=DVC.savedCards.guids().length;
+  const badge=$("savedBadge");
+
+  badge.textContent=count;
+  badge.classList.toggle("hidden",!count);
+}
+
+function refreshSelectedMeta(){
+  updateSavedBadge();
 }
 
 function renderSelected(){
@@ -128,71 +196,214 @@ function renderSelected(){
     initials(selectedCard.name)
   );
 
-  $("cardSelect").value=
-    selectedCard.guid;
+  picker.setValue(selectedCard.guid);
 
   renderHomeQr(selectedCard.guid);
+  renderWhatsappQr(selectedCard);
+  setFlipped(false);
+
+  $("openCardButton").href=DVC.localCardUrl(selectedCard.guid);
+
+  refreshSelectedMeta();
 }
 
-function renderEmpty(){
+function renderEmpty(failed){
   $("selectedPreview").classList.add("hidden");
   $("homeQr").innerHTML="";
+  $("homeQrWa").innerHTML="";
 
   $("emptyState").classList.remove("hidden");
 
   $("welcomeName").textContent="Welcome";
 
   $("welcomeInstitute").textContent=
-    "Create your first digital visiting card.";
+    failed
+      ?"We could not load your cards."
+      :"Create your first digital visiting card.";
 
   $("welcomeImage").style.display="none";
 
   $("welcomeInitials").textContent="VC";
   $("welcomeInitials").style.display="grid";
+
+  const heading=document.querySelector("#emptyState h2");
+  const text=document.querySelector("#emptyState p");
+
+  if(failed){
+    heading.textContent="Unable to load cards";
+    text.textContent="Check your connection and reload the page.";
+  }else{
+    heading.textContent="No cards yet";
+    text.textContent="Create your first digital visiting card to get started.";
+  }
 }
+
+/* ---------- QR codes ---------- */
 
 function renderHomeQr(guid){
   const el=$("homeQr");
 
   if(!el||!guid)return;
 
+  drawQr(
+    el,
+    DVC.cardUrl(guid),
+    "#111318",
+    "#ffffff",
+    "111318",
+    "ffffff",
+    "Digital visiting card QR code"
+  );
+}
+
+function drawQr(el,text,dark,light,darkHex,lightHex,alt){
   el.innerHTML="";
 
-  const url=
-    CONFIG.FRONTEND_BASE_URL+
-    "card/?guid="+
-    encodeURIComponent(guid);
+  if(typeof QRCode==="undefined"){
+    /* Library still loading from the CDN: show the hosted image now and
+       swap to the local canvas as soon as the library arrives. */
+    appendQrImage(el,text,darkHex,lightHex,alt);
 
-  if(typeof QRCode!=="undefined"){
-    try{
-      new QRCode(el,{
-        text:url,
-        width:190,
-        height:190,
-        colorDark:"#111318",
-        colorLight:"#ffffff",
-        correctLevel:QRCode.CorrectLevel.H
-      });
+    DVC.whenQr(()=>{
+      /* the card may have changed while we were waiting */
+      if(el.dataset.qrText!==text)return;
 
-      return;
-    }catch(error){}
+      el.innerHTML="";
+      drawQr(el,text,dark,light,darkHex,lightHex,alt);
+    });
+
+    el.dataset.qrText=text;
+    return;
   }
 
+  el.dataset.qrText=text;
+
+  try{
+    new QRCode(el,{
+      text:text,
+      width:190,
+      height:190,
+      colorDark:dark,
+      colorLight:light,
+      correctLevel:QRCode.CorrectLevel.M
+    });
+  }catch(error){
+    el.innerHTML="";
+    appendQrImage(el,text,darkHex,lightHex,alt);
+  }
+}
+
+function appendQrImage(el,text,darkHex,lightHex,alt){
   const image=document.createElement("img");
 
   image.src=
-    "https://api.qrserver.com/v1/create-qr-code/?size=190x190&data="+
-    encodeURIComponent(url);
+    "https://api.qrserver.com/v1/create-qr-code/?size=190x190&color="+
+    darkHex+"&bgcolor="+lightHex+"&data="+
+    encodeURIComponent(text);
 
   image.width=190;
   image.height=190;
-  image.alt="Digital visiting card QR code";
+  image.alt=alt;
 
   el.appendChild(image);
 }
 
+/* WhatsApp number of the card (digits with country code) */
+function whatsappNumber(card){
+  const raw=String(
+    card.whatsapp||card.phone||""
+  ).trim().replace(/\.0+$/,"");
+
+  let number=raw.replace(/\D/g,"");
+
+  if(!number)return"";
+
+  /* older cards were saved without a country code */
+  if(!raw.startsWith("+")&&number.length===10){
+    number="91"+number;
+  }
+
+  return number;
+}
+
+function whatsappLink(card){
+  const number=whatsappNumber(card);
+
+  if(!number)return"";
+
+  return"https://wa.me/"+number+
+    "?text="+encodeURIComponent(DVC.cardUrl(card.guid));
+}
+
+function renderWhatsappQr(card){
+  const el=$("homeQrWa");
+  const link=whatsappLink(card);
+  const button=$("swapQrButton");
+
+  el.innerHTML="";
+
+  if(!link){
+    button.disabled=true;
+    button.title="Add a WhatsApp or phone number to this card to enable the WhatsApp QR.";
+    return;
+  }
+
+  button.disabled=false;
+  button.title="";
+
+  drawQr(
+    el,
+    link,
+    "#064e3b",
+    "#dcf8c6",
+    "064e3b",
+    "dcf8c6",
+    "WhatsApp QR code"
+  );
+}
+
+function setFlipped(flag){
+  $("qrFlip").classList.toggle("flipped",flag);
+
+  $("qrTitle").textContent=
+    flag?"WhatsApp QR":"Card QR";
+
+  $("qrHint").textContent=
+    flag
+      ?"Scan to message on WhatsApp with the card link"
+      :"Scan to open this digital card";
+}
+
+function swapQr(){
+  if(!selectedCard||$("swapQrButton").disabled)return;
+
+  setFlipped(
+    !$("qrFlip").classList.contains("flipped")
+  );
+}
+
+async function copyCardLink(){
+  if(!selectedCard)return;
+
+  const flipped=
+    $("qrFlip").classList.contains("flipped");
+
+  const text=flipped
+    ?whatsappLink(selectedCard)
+    :DVC.cardUrl(selectedCard.guid);
+
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast("Link copied.");
+  }catch(error){
+    window.prompt("Copy this link:",text);
+  }
+}
+
+/* ---------- helpers ---------- */
+
 function setImage(image,url,fallback,text){
-  const src=driveImage(url);
+  const src=DVC.driveImage(url);
 
   if(!src){
     image.style.display="none";
@@ -201,27 +412,15 @@ function setImage(image,url,fallback,text){
     return;
   }
 
-  image.src=src;
-  image.style.display="block";
-  fallback.style.display="none";
-
   image.onerror=()=>{
     image.style.display="none";
     fallback.textContent=text;
     fallback.style.display="grid";
   };
-}
 
-function driveImage(url){
-  const value=String(url||"").trim();
-
-  if(!value)return"";
-
-  const match=value.match(/[-\w]{25,}/);
-
-  return value.includes("drive.google.com")&&match
-    ?"https://drive.google.com/uc?export=view&id="+match[0]
-    :value;
+  image.src=src;
+  image.style.display="block";
+  fallback.style.display="none";
 }
 
 function initials(value){
@@ -235,20 +434,7 @@ function initials(value){
 
   return words.length===1
     ?words[0].slice(0,2).toUpperCase()
-    :(words[0][0]+words.at(-1)[0]).toUpperCase();
-}
-
-function escapeHtml(value){
-  return String(value??"")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
-
-function safeAttr(value){
-  return escapeHtml(value);
+    :(words[0][0]+words[words.length-1][0]).toUpperCase();
 }
 
 function showToast(message,error=false){
@@ -267,4 +453,97 @@ function showToast(message,error=false){
       ()=>el.className="toast",
       2800
     );
+}
+
+
+/* ---------- device sync (Card Key) ---------- */
+
+/* ?key=... in the address bar links this browser to that Card Key */
+function adoptKeyFromUrl(){
+  try{
+    const params=new URLSearchParams(location.search);
+    const key=params.get("key");
+
+    if(!key)return;
+
+    const clean=new URL(location.href);
+    clean.searchParams.delete("key");
+    history.replaceState(null,"",clean.pathname+clean.search+clean.hash);
+
+    if(!DVC.validKey(key))return;
+
+    if(key===DVC.getAppId())return;
+
+    if(confirm("Link this device to the Card Key from the other device?\nIts cards will appear here.")){
+      DVC.setAppId(key);
+    }
+  }catch(error){}
+}
+
+function bindSync(){
+  const modal=$("syncModal");
+
+  const close=()=>modal.classList.add("hidden");
+
+  $("syncOpen").addEventListener("click",()=>{
+    const key=DVC.getAppId();
+
+    $("syncKey").value=key;
+    $("syncInput").value="";
+    modal.classList.remove("hidden");
+
+    const box=$("syncQr");
+    box.innerHTML="";
+
+    DVC.whenQr(()=>{
+      if(box.childElementCount)return;
+
+      new QRCode(box,{
+        text:DVC.syncLink(),
+        width:150,
+        height:150,
+        colorDark:"#111318",
+        colorLight:"#ffffff",
+        correctLevel:QRCode.CorrectLevel.M
+      });
+    });
+  });
+
+  $("syncClose").addEventListener("click",close);
+
+  modal.addEventListener("click",event=>{
+    if(event.target===modal)close();
+  });
+
+  document.addEventListener("keydown",event=>{
+    if(event.key==="Escape")close();
+  });
+
+  const copy=async(text,message)=>{
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast(message);
+    }catch(error){
+      window.prompt("Copy this:",text);
+    }
+  };
+
+  $("syncCopyKey").addEventListener("click",()=>copy($("syncKey").value,"Card Key copied."));
+  $("syncCopyLink").addEventListener("click",()=>copy(DVC.syncLink(),"Sync link copied."));
+
+  $("syncApply").addEventListener("click",()=>{
+    const key=$("syncInput").value.trim();
+
+    if(!DVC.validKey(key)){
+      showToast("That Card Key does not look valid.",true);
+      return;
+    }
+
+    if(!DVC.setAppId(key)){
+      showToast("Could not use that Card Key.",true);
+      return;
+    }
+
+    location.reload();
+  });
 }

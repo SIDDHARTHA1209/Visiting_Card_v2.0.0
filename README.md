@@ -1,11 +1,11 @@
-# Digital Visiting Card Creator v2.1.0
+# DigiCard v1.3 (Digital Visiting Card Creator)
 
 A static PWA frontend with Google Apps Script, Google Sheets and Google Drive storage.
 
 ## Project Structure
 
 ```text
-Visiting_Card_v2.1.0/
+DigiCard_v1.3/
 ├── backend/
 │   ├── Code.gs
 │   └── appsscript.json
@@ -13,6 +13,7 @@ Visiting_Card_v2.1.0/
 │   ├── index.html
 │   ├── style.css
 │   ├── script.js
+│   ├── common.js        (shared API + localStorage cache helpers)
 │   ├── manifest.json
 │   ├── sw.js
 │   ├── icons/
@@ -89,6 +90,7 @@ description
 ```text
 appId
 guid
+cardName
 createdAt
 status
 isFavourite
@@ -165,3 +167,18 @@ GitHub Pages deployment can be done after local development and testing are comp
 - Institute logo and profile photo are separate uploads in the create-card form.
 - Tagline/Affiliation is not presented as a registration/create-card form field.
 - Card ownership is stored in CardOwners and viewer submissions in ViewerResponses.
+
+
+## v1.3 changes
+- Pages render instantly from a localStorage cache and refresh in the background (`public/common.js`).
+- Service worker is now network-first for pages/scripts/styles, cache-first for images and CDN files.
+- Backend: company lookup read once (not per card), `ownedcards` result cached for 5 minutes, sheet writes use LockService.
+- Phone numbers are `+<code> <10 digits>` and stored as text. Country flag picker on the create form.
+- Home page: Swap button flips the card QR to a WhatsApp QR.
+- Viewer response form is reachable from the card ("Send your details").
+- API URL and frontend URL now live only in `public/common.js` (and `CONFIG` in `backend/Code.gs`).
+
+## Deploying updates
+1. Paste `backend/Code.gs` into Apps Script, then Deploy -> Manage deployments -> New version.
+2. Push the repository; GitHub Pages publishes `public/`.
+3. If the API URL changes, edit `API_URL` in `public/common.js` only.

@@ -1,57 +1,65 @@
-const CACHE_NAME = "visiting-card-v2500";
+/*
+  DigiCard service worker (v3000)
+
+  - Pages, scripts and styles: NETWORK-FIRST (with a short timeout), falling
+    back to the cache. A new deploy is therefore picked up immediately and the
+    HTML / JS / CSS can never get out of sync (the old cache-first strategy could
+    serve an old page with new scripts or the other way round).
+  - Images, icons and the QR library CDN file: CACHE-FIRST (they never change).
+  - API calls (Apps Script) are never intercepted.
+*/
+const CACHE_NAME = "digicard-v4200";
 const BASE_PATH = new URL(self.registration.scope).pathname;
+const NETWORK_TIMEOUT_MS = 4000;
 
 const PRECACHE_ASSETS = [
-    BASE_PATH,
-    BASE_PATH + "index.html",
-    BASE_PATH + "style.css",
-    BASE_PATH + "script.js",
-    BASE_PATH + "manifest.json",
+    "",
+    "index.html",
+    "style.css",
+    "script.js",
+    "common.js",
+    "picker.js",
+    "install.js",
+    "manifest.json",
+    "create/",
+    "create/style.css",
+    "create/script.js",
+    "card/",
+    "card/style.css",
+    "card/script.js",
+    "saved/",
+    "saved/style.css",
+    "saved/script.js",
+    "success/",
+    "success/style.css",
+    "success/script.js",
+    "icons/icon-192.png",
+    "icons/icon-512.png",
+    "icons/icon.svg",
+    "icons/apple-touch-icon.png"
+].map(path => BASE_PATH + path);
 
-    BASE_PATH + "create/",
-    BASE_PATH + "create/index.html",
-    BASE_PATH + "create/style.css",
-    BASE_PATH + "create/script.js",
-
-    BASE_PATH + "card/",
-    BASE_PATH + "card/index.html",
-    BASE_PATH + "card/style.css",
-    BASE_PATH + "card/script.js",
-
-    BASE_PATH + "saved/",
-    BASE_PATH + "saved/index.html",
-    BASE_PATH + "saved/style.css",
-    BASE_PATH + "saved/script.js",
-
-    BASE_PATH + "responses/",
-    BASE_PATH + "responses/index.html",
-    BASE_PATH + "responses/style.css",
-    BASE_PATH + "responses/script.js",
-
-    BASE_PATH + "viewer/",
-    BASE_PATH + "viewer/index.html",
-    BASE_PATH + "viewer/style.css",
-    BASE_PATH + "viewer/script.js",
-
-    BASE_PATH + "success/",
-    BASE_PATH + "success/index.html",
-    BASE_PATH + "success/style.css",
-    BASE_PATH + "success/script.js",
-
-    BASE_PATH + "icons/icon-192.png",
-    BASE_PATH + "icons/icon-512.png"
+const CACHEABLE_CDN_HOSTS = [
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net",
+    "flagcdn.com"
 ];
 
-/* Install the updated service worker and cache essential files */
 self.addEventListener("install", event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(PRECACHE_ASSETS))
+            .then(cache =>
+                /* one missing file must not break the whole install */
+                Promise.all(
+                    PRECACHE_ASSETS.map(url =>
+                        cache.add(url).catch(() => null)
+                    )
+                )
+            )
             .then(() => self.skipWaiting())
     );
 });
 
-/* Remove old caches and activate the updated service worker */
 self.addEventListener("activate", event => {
     event.waitUntil(
         caches.keys()
@@ -66,70 +74,96 @@ self.addEventListener("activate", event => {
     );
 });
 
-/* Handle page navigation and static assets */
+function putInCache(request, response) {
+    if (response && response.ok && response.type !== "opaque") {
+        const copy = response.clone();
+
+        caches.open(CACHE_NAME)
+            .then(cache => cache.put(request, copy))
+            .catch(() => null);
+    }
+
+    return response;
+}
+
+function networkFirst(request) {
+    return new Promise(resolve => {
+        let settled = false;
+
+        const fallback = () =>
+            caches.match(request, { ignoreSearch: true })
+                .then(cached => cached || null);
+
+        const timer = setTimeout(() => {
+            /* slow network: show the cached copy if there is one, but let the
+               network request keep going so the cache is refreshed */
+            fallback().then(cached => {
+                if (cached && !settled) {
+                    settled = true;
+                    resolve(cached);
+                }
+            });
+        }, NETWORK_TIMEOUT_MS);
+
+        fetch(request, { cache: "no-cache" })
+            .then(response => {
+                clearTimeout(timer);
+                putInCache(request, response);
+
+                if (!settled) {
+                    settled = true;
+                    resolve(response);
+                }
+            })
+            .catch(() => {
+                clearTimeout(timer);
+
+                if (settled) return;
+
+                fallback().then(cached => {
+                    settled = true;
+                    resolve(
+                        cached ||
+                        (request.mode === "navigate"
+                            ? caches.match(BASE_PATH + "index.html")
+                            : Response.error())
+                    );
+                });
+            });
+    });
+}
+
+function cacheFirst(request) {
+    return caches.match(request).then(cached => {
+        if (cached) return cached;
+
+        return fetch(request).then(response => putInCache(request, response));
+    });
+}
+
 self.addEventListener("fetch", event => {
     const request = event.request;
 
-    if (request.method !== "GET") {
-        return;
-    }
+    if (request.method !== "GET") return;
 
     const url = new URL(request.url);
 
-    /* Do not intercept external requests, including Apps Script */
     if (url.origin !== self.location.origin) {
+        if (CACHEABLE_CDN_HOSTS.includes(url.hostname)) {
+            event.respondWith(cacheFirst(request));
+        }
+
+        /* everything else (Apps Script API, Drive images) goes straight to the network */
         return;
     }
 
-    /* Use network-first for page navigation */
-    if (request.mode === "navigate") {
-        event.respondWith(
-            fetch(request)
-                .then(response => {
-                    if (response && response.ok) {
-                        const copy = response.clone();
+    const isImage =
+        /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(url.pathname);
 
-                        caches.open(CACHE_NAME)
-                            .then(cache => cache.put(request, copy));
-                    }
-
-                    return response;
-                })
-                .catch(() =>
-                    caches.match(request)
-                        .then(cached =>
-                            cached || caches.match(BASE_PATH + "index.html")
-                        )
-                )
-        );
-
+    if (isImage) {
+        event.respondWith(cacheFirst(request));
         return;
     }
 
-    /* Use cache-first for CSS, JavaScript, images and other assets */
-    event.respondWith(
-        caches.match(request)
-            .then(cached => {
-                if (cached) {
-                    return cached;
-                }
-
-                return fetch(request).then(response => {
-                    if (
-                        !response ||
-                        !response.ok ||
-                        response.type === "opaque"
-                    ) {
-                        return response;
-                    }
-
-                    const copy = response.clone();
-
-                    caches.open(CACHE_NAME)
-                        .then(cache => cache.put(request, copy));
-
-                    return response;
-                });
-            })
-    );
+    event.respondWith(networkFirst(request));
 });
