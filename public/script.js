@@ -35,7 +35,6 @@ function init(){
   });
 
   bind();
-  bindSync();
   loadCards();
 }
 
@@ -184,10 +183,7 @@ function renderSelected(){
   $("welcomeName").textContent=
     selectedCard.name||"Welcome";
 
-  $("welcomeInstitute").textContent=
-    selectedCard.instituteName||
-    selectedCard.title||
-    "Digital Visiting Card";
+  
 
   setImage(
     $("welcomeImage"),
@@ -216,10 +212,7 @@ function renderEmpty(failed){
 
   $("welcomeName").textContent="Welcome";
 
-  $("welcomeInstitute").textContent=
-    failed
-      ?"We could not load your cards."
-      :"Create your first digital visiting card.";
+  
 
   $("welcomeImage").style.display="none";
 
@@ -480,70 +473,3 @@ function adoptKeyFromUrl(){
   }catch(error){}
 }
 
-function bindSync(){
-  const modal=$("syncModal");
-
-  const close=()=>modal.classList.add("hidden");
-
-  $("syncOpen").addEventListener("click",()=>{
-    const key=DVC.getAppId();
-
-    $("syncKey").value=key;
-    $("syncInput").value="";
-    modal.classList.remove("hidden");
-
-    const box=$("syncQr");
-    box.innerHTML="";
-
-    DVC.whenQr(()=>{
-      if(box.childElementCount)return;
-
-      new QRCode(box,{
-        text:DVC.syncLink(),
-        width:150,
-        height:150,
-        colorDark:"#111318",
-        colorLight:"#ffffff",
-        correctLevel:QRCode.CorrectLevel.M
-      });
-    });
-  });
-
-  $("syncClose").addEventListener("click",close);
-
-  modal.addEventListener("click",event=>{
-    if(event.target===modal)close();
-  });
-
-  document.addEventListener("keydown",event=>{
-    if(event.key==="Escape")close();
-  });
-
-  const copy=async(text,message)=>{
-    try{
-      await navigator.clipboard.writeText(text);
-      showToast(message);
-    }catch(error){
-      window.prompt("Copy this:",text);
-    }
-  };
-
-  $("syncCopyKey").addEventListener("click",()=>copy($("syncKey").value,"Card Key copied."));
-  $("syncCopyLink").addEventListener("click",()=>copy(DVC.syncLink(),"Sync link copied."));
-
-  $("syncApply").addEventListener("click",()=>{
-    const key=$("syncInput").value.trim();
-
-    if(!DVC.validKey(key)){
-      showToast("That Card Key does not look valid.",true);
-      return;
-    }
-
-    if(!DVC.setAppId(key)){
-      showToast("Could not use that Card Key.",true);
-      return;
-    }
-
-    location.reload();
-  });
-}

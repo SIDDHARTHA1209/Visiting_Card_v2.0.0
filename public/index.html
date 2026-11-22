@@ -14,7 +14,7 @@
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Digital Visiting Card</title>
-<link rel="stylesheet" href="style.css?v=4200">
+<link rel="stylesheet" href="style.css?v=4300">
 </head>
 <body>
 
@@ -34,9 +34,8 @@
 
   <section class="welcome-card">
     <div class="welcome-copy">
-      <span class="eyebrow">WELCOME</span>
       <h1 id="welcomeName">Welcome</h1>
-      <p id="welcomeInstitute">Select a card to view your digital visiting card.</p>
+      <p id="welcomeInstitute" hidden></p>
     </div>
 
     <div class="welcome-media">
@@ -49,10 +48,6 @@
     <label id="cardSelectLabel">Select Card</label>
 
     <div id="cardPicker"></div>
-
-    <button id="syncOpen" class="sync-link" type="button">
-      Can't see your cards? Sync this device
-    </button>
   </section>
 
   <section id="selectedPreview" class="selected-preview hidden">
@@ -105,44 +100,12 @@
 </main>
 
 
-<div id="syncModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
-  <div class="modal-box">
-    <button id="syncClose" class="modal-close" type="button" aria-label="Close">×</button>
-    <h2 id="syncTitle">Sync your cards</h2>
-    <p class="modal-text">
-      Your cards belong to a private <b>Card Key</b> stored in this browser.
-      A different browser, phone or address (for example <code>127.0.0.1:5501</code> vs <code>:5502</code>)
-      has a different key, so it shows no cards until you link it.
-    </p>
-
-    <label class="modal-label" for="syncKey">Your Card Key</label>
-    <div class="modal-row">
-      <input id="syncKey" readonly>
-      <button id="syncCopyKey" type="button">Copy</button>
-    </div>
-
-    <div class="sync-qr-wrap">
-      <div id="syncQr" class="sync-qr"></div>
-      <p class="modal-text small">Scan this with your other device, or copy the link below and open it there.</p>
-    </div>
-
-    <button id="syncCopyLink" class="modal-wide" type="button">Copy sync link</button>
-
-    <label class="modal-label" for="syncInput">Use a Card Key from another device</label>
-    <div class="modal-row">
-      <input id="syncInput" placeholder="Paste Card Key here" autocomplete="off" spellcheck="false">
-      <button id="syncApply" type="button" class="primary">Link</button>
-    </div>
-
-    <p class="modal-warn">Keep your Card Key private: anyone who has it can see your cards.</p>
-  </div>
-</div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<script src="common.js?v=4200"></script>
-<script src="picker.js?v=4200"></script>
-<script src="script.js?v=4200" defer></script>
+<script src="common.js?v=4300"></script>
+<script src="picker.js?v=4300"></script>
+<script src="script.js?v=4300" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" async onload="window.dispatchEvent(new Event('qrlib'))"></script>
 
 <script>
@@ -153,6 +116,6 @@ if("serviceWorker" in navigator){
 }
 </script>
 
-<script src="install.js?v=4200"></script>
+<script src="install.js?v=4300"></script>
 </body>
 </html>

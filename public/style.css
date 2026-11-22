@@ -745,3 +745,17 @@ select{
   font-size:12px;
   line-height:1.45;
 }
+
+/* QR panel: inset about 0.5 cm from each side on phones */
+@media (max-width:700px){
+  .selected-preview{
+    margin-left:19px;
+    margin-right:19px;
+  }
+}
+
+/* hero shows only the name and the photo */
+.welcome-card .eyebrow,
+.welcome-copy p{
+  display:none;
+}

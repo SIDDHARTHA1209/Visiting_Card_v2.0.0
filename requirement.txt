@@ -1,1 +1,4 @@
-
+Database : https://docs.google.com/spreadsheets/d/1qSvVyxwHFVfJCtc2cZXHYiCbmk_NjRZqBeUZkJ6O9OA/edit?pli=1&gid=1108685077#gid=1108685077
+spreadsheet id : 1qSvVyxwHFVfJCtc2cZXHYiCbmk_NjRZqBeUZkJ6O9OA
+API ARL : https://script.google.com/macros/s/AKfycbxypiPlx03NxLC1riLifBALvIWLkrSSnMlkKjUXa5CajVzxVBlpxX0J0d9xGdWBMBAFWw/exec
+Images Folder location : https://drive.google.com/drive/u/0/folders/1nBH0EkyB4_Dj0LLEkYne-YdP4iJkABVo
