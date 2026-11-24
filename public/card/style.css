@@ -265,7 +265,7 @@ button{
   justify-content:center;
   text-align:center;
   color:var(--navy);
-  font-size:calc(100cqw * .021);
+  font-size:calc(100cqw * .027);
   font-weight:900;
   letter-spacing:.05em;
   text-transform:uppercase;
@@ -297,7 +297,7 @@ button{
   align-items:center;
   justify-content:center;
   text-align:center;
-  font-size:calc(100cqw * .05);
+  font-size:calc(100cqw * .058);
   z-index:3;
 }
 
@@ -342,7 +342,7 @@ button{
   display:grid;
   place-items:center;
   color:var(--navy);
-  font-size:calc(100cqw * .032);
+  font-size:calc(100cqw * .04);
   font-weight:900;
 }
 
@@ -358,7 +358,7 @@ button{
   align-items:center;
   gap:1.3em;
   color:var(--navy);
-  font-size:calc(100cqw * .0155);
+  font-size:calc(100cqw * .02);
   font-weight:900;
 }
 
@@ -405,7 +405,7 @@ button{
   display:flex;
   flex-direction:column;
   justify-content:center;
-  font-size:calc(100cqw * .034);
+  font-size:calc(100cqw * .042);
   z-index:5;
 }
 
@@ -480,7 +480,7 @@ button{
   align-items:flex-end;
   text-align:right;
   color:#fff;
-  font-size:calc(100cqw * .0165);
+  font-size:calc(100cqw * .021);
   z-index:6;
 }
 
@@ -515,7 +515,7 @@ button{
   justify-content:center;
   gap:1.2em;
   color:var(--navy);
-  font-size:calc(100cqw * .0155);
+  font-size:calc(100cqw * .02);
   font-weight:900;
   letter-spacing:.12em;
   z-index:7;
@@ -527,33 +527,43 @@ button{
 
 .social-actions{
   display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
   flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
   margin:20px 0 14px;
 }
 
 .social-action{
-  width:55px;
-  height:52px;
-  display:grid;
-  place-items:center;
-  border:1px solid #d7d2c7;
-  border-radius:11px;
+  flex:0 0 calc((100% - 24px) / 3);
+  max-width:calc((100% - 24px) / 3);
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:12px 6px;
+  border:1px solid #e3ded3;
+  border-radius:16px;
   background:#fff;
-  color:var(--text);
+  color:#222;
   text-decoration:none;
+  font-size:14px;
+  font-weight:600;
   box-shadow:0 5px 14px rgba(0,0,0,.08);
   transition:.2s;
 }
 
 .social-action:hover{
-  color:var(--navy);
   transform:translateY(-2px);
 }
 
-.social-action svg,
+.social-action svg{
+  width:36px;
+  height:36px;
+  flex:none;
+}
+
 .main-action svg,
 .contact-action svg{
   width:24px;
@@ -775,13 +785,13 @@ button{
 
 
   .social-action{
-    width:47px;
-    height:45px;
+    min-height:84px;
+    font-size:13px;
   }
 
   .social-action svg{
-    width:21px;
-    height:21px;
+    width:34px;
+    height:34px;
   }
 
   .main-action,

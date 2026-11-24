@@ -1,3 +1,6 @@
+/* Paste your Google Maps JavaScript API key here (see instructions). Empty = fallback map. */
+const GOOGLE_MAPS_KEY="";
+
 /* safety: an older common.js must not crash this page */
 if(!DVC.storedCards){DVC.storedCards={get(){return null;},set(){},remove(){},guids(){return[];},all(){return[];},owned(){return[];}};}
 if(!DVC.savedCards){DVC.savedCards={get(){return null;},set(){},remove(){},guids(){return[];},all(){return[];},has(){return false;}};}
@@ -618,7 +621,7 @@ async function detectLocation(){
 
 	function save(lat,lng){
 		$("locationLink").value=
-			`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+			`https://www.google.com/maps?q=${lat},${lng}`;
 
 		closeLocationMap();
 		saveDraft();
@@ -711,6 +714,72 @@ function loadLeaflet(){
 	return leafletReady;
 }
 
+let gmapsReady=null;
+
+function loadGoogleMaps(){
+	if(window.google&&google.maps)return Promise.resolve();
+
+	if(gmapsReady)return gmapsReady;
+
+	gmapsReady=new Promise((resolve,reject)=>{
+		const js=document.createElement("script");
+
+		js.src="https://maps.googleapis.com/maps/api/js?key="+encodeURIComponent(GOOGLE_MAPS_KEY);
+		js.onload=resolve;
+		js.onerror=()=>{gmapsReady=null;reject(new Error("google maps failed"));};
+		document.head.appendChild(js);
+	});
+
+	return gmapsReady;
+}
+
+/* one map API for the picker: Google Maps when a key is set, else the fallback */
+function mapView(ll,zoom){
+	const p=Array.isArray(ll)?{lat:ll[0],lng:ll[1]}:ll;
+
+	if(GOOGLE_MAPS_KEY){
+		picker.map.setCenter(p);
+		picker.map.setZoom(zoom);
+	}else{
+		picker.map.setView(p,zoom);
+	}
+}
+
+function getPin(){
+	if(!picker.marker)return null;
+
+	if(GOOGLE_MAPS_KEY){
+		const p=picker.marker.getPosition();
+
+		return{lat:p.lat(),lng:p.lng()};
+	}
+
+	return picker.marker.getLatLng();
+}
+
+async function searchPlaces(q){
+	if(GOOGLE_MAPS_KEY){
+		await loadGoogleMaps();
+
+		return new Promise(resolve=>{
+			new google.maps.Geocoder().geocode({address:q},(res,status)=>{
+				if(status!=="OK"||!res)return resolve([]);
+
+				resolve(res.slice(0,6).map(x=>({
+					name:x.formatted_address,
+					lat:x.geometry.location.lat(),
+					lng:x.geometry.location.lng()
+				})));
+			});
+		});
+	}
+
+	const res=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=6&q="+encodeURIComponent(q),{headers:{Accept:"application/json"}});
+	const list=await res.json();
+
+	return(Array.isArray(list)?list:[]).map(x=>({name:x.display_name,lat:Number(x.lat),lng:Number(x.lon)}));
+}
+
 let picker=null;
 
 async function openLocationPicker(){
@@ -724,9 +793,14 @@ async function openLocationPicker(){
 			'<div class="location-modal">'+
 				'<div class="location-map-header">'+
 					'<div><strong>Your location</strong>'+
-					'<small>Check the pin. Tap the map or drag the pin to your exact spot, then press Use this location.</small></div>'+
+					'<small>Search for your place, then tap the map or drag the pin to your exact spot, then press Use this location.</small></div>'+
 					'<button type="button" class="location-close-button" aria-label="Close">×</button>'+
 				'</div>'+
+				'<form id="pickSearchForm" style="display:flex;gap:8px;padding:10px 16px 0">'+
+					'<input id="pickSearch" type="search" placeholder="Search a place, institute or address" autocomplete="off" style="flex:1;min-width:0;padding:11px 12px;border:1px solid #cfc9bb;border-radius:10px;font-size:16px">'+
+					'<button type="submit" class="button" id="pickSearchBtn">Search</button>'+
+				'</form>'+
+				'<div id="pickResults" style="padding:6px 16px 0;max-height:150px;overflow:auto"></div>'+
 				'<div class="location-map"><div id="pickMap" style="width:100%;height:100%;min-height:340px"></div></div>'+
 				'<div style="display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;flex-wrap:wrap">'+
 					'<button type="button" class="button secondary" id="pickMyPos">Use my position</button>'+
@@ -738,12 +812,66 @@ async function openLocationPicker(){
 		picker={box:box,map:null,marker:null};
 
 		box.querySelector(".location-close-button").addEventListener("click",()=>box.classList.add("hidden"));
+
+		const form=box.querySelector("#pickSearchForm");
+		const input=box.querySelector("#pickSearch");
+		const results=box.querySelector("#pickResults");
+
+		form.addEventListener("submit",async e=>{
+			e.preventDefault();
+
+			const q=input.value.trim();
+
+			if(!q)return;
+
+			results.innerHTML='<small>Searching...</small>';
+
+			try{
+				const list=await searchPlaces(q);
+
+				if(!list.length){
+					results.innerHTML='<small>No place found. Try a city or a nearby landmark.</small>';
+					return;
+				}
+
+				results.innerHTML="";
+
+				list.forEach(item=>{
+					const b=document.createElement("button");
+
+					b.type="button";
+					b.textContent=item.name;
+					b.style.cssText="display:block;width:100%;text-align:left;padding:9px 10px;margin:0 0 6px;border:1px solid #e3ded3;border-radius:8px;background:#fff;font-size:13px;cursor:pointer";
+					b.addEventListener("click",()=>{
+						const ll={lat:item.lat,lng:item.lng};
+
+						mapView(ll,17);
+						setPin(ll);
+						results.innerHTML="";
+					});
+					results.appendChild(b);
+				});
+
+				/* jump straight to the best match */
+				const ll={lat:list[0].lat,lng:list[0].lng};
+
+				mapView(ll,15);
+				setPin(ll);
+			}catch(err){
+				results.innerHTML='<small>Search failed. Check your internet and try again.</small>';
+			}
+		});
+
+		/* pre-fill from what the user already typed */
+		const inst=($("instituteName")&&$("instituteName").value.trim())||"";
+
+		if(inst)input.value=inst;
 	}
 
 	picker.box.classList.remove("hidden");
 
 	try{
-		await loadLeaflet();
+		await(GOOGLE_MAPS_KEY?loadGoogleMaps():loadLeaflet());
 	}catch(e){
 		picker.box.classList.add("hidden");
 		status.textContent="Could not load the map. Paste a Google Maps link instead.";
@@ -762,14 +890,26 @@ async function openLocationPicker(){
 	}
 
 	if(!picker.map){
-		picker.map=L.map("pickMap").setView(start,zoom);
+		if(GOOGLE_MAPS_KEY){
+			picker.map=new google.maps.Map($("pickMap"),{
+				center:{lat:start[0],lng:start[1]},
+				zoom:zoom,
+				streetViewControl:false,
+				mapTypeControl:false,
+				fullscreenControl:false
+			});
 
-		L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
-			maxZoom:19,
-			attribution:"&copy; OpenStreetMap"
-		}).addTo(picker.map);
+			picker.map.addListener("click",e=>setPin(e.latLng.toJSON()));
+		}else{
+			picker.map=L.map("pickMap").setView(start,zoom);
 
-		picker.map.on("click",e=>setPin(e.latlng));
+			L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+				maxZoom:19,
+				attribution:"&copy; OpenStreetMap"
+			}).addTo(picker.map);
+
+			picker.map.on("click",e=>setPin(e.latlng));
+		}
 
 		picker.box.querySelector("#pickUse").addEventListener("click",()=>{
 			if(!picker.marker){
@@ -777,10 +917,10 @@ async function openLocationPicker(){
 				return;
 			}
 
-			const p=picker.marker.getLatLng();
+			const p=getPin();
 
 			$("locationLink").value=
-				`https://www.google.com/maps/search/?api=1&query=${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+				`https://www.google.com/maps?q=${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
 
 			picker.box.classList.add("hidden");
 			$("locationStatus").textContent="Location set from the map. Tap View Location to check it.";
@@ -794,7 +934,7 @@ async function openLocationPicker(){
 				pos=>{
 					const ll={lat:pos.coords.latitude,lng:pos.coords.longitude};
 
-					picker.map.setView(ll,17);
+					mapView(ll,17);
 					setPin(ll);
 				},
 				()=>notify("Device location is not available. Tap the map instead.",true),
@@ -802,28 +942,31 @@ async function openLocationPicker(){
 			);
 		});
 	}else{
-		picker.map.setView(start,zoom);
+		mapView(start,zoom);
 	}
 
 	if(m)setPin({lat:start[0],lng:start[1]});
 
-	setTimeout(()=>picker.map.invalidateSize(),150);
+	if(!GOOGLE_MAPS_KEY)setTimeout(()=>picker.map.invalidateSize(),150);
 
 	/* no pin yet: centre on the network position so the user starts near home */
 	if(!m){
 		ipLocation().then(f=>{
-			if(!picker.marker)picker.map.setView([f.lat,f.lng],13);
+			if(!picker.marker)mapView([f.lat,f.lng],13);
 		}).catch(()=>{});
 	}
 }
 
 function setPin(latlng){
 	if(picker.marker){
-		picker.marker.setLatLng(latlng);
+		if(GOOGLE_MAPS_KEY)picker.marker.setPosition(latlng);
+		else picker.marker.setLatLng(latlng);
 		return;
 	}
 
-	picker.marker=L.marker(latlng,{draggable:true}).addTo(picker.map);
+	picker.marker=GOOGLE_MAPS_KEY?
+		new google.maps.Marker({position:latlng,map:picker.map,draggable:true}):
+		L.marker(latlng,{draggable:true}).addTo(picker.map);
 }
 
 function viewLocation(){

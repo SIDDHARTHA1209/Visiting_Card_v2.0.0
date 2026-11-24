@@ -748,7 +748,8 @@ select{
 
 /* QR panel: inset about 0.5 cm from each side on phones */
 @media (max-width:700px){
-  .selected-preview{
+  .selected-preview,
+  .welcome-card{
     margin-left:19px;
     margin-right:19px;
   }
@@ -758,4 +759,30 @@ select{
 .welcome-card .eyebrow,
 .welcome-copy p{
   display:none;
+}
+
+/* narrower name box: keep the photo fully inside it */
+@media (max-width:700px){
+  .welcome-card{
+    padding:18px 16px;
+    gap:12px;
+  }
+
+  .welcome-copy{
+    flex:1;
+    min-width:0;
+  }
+
+  .welcome-copy h1{
+    font-size:clamp(22px,7vw,28px);
+    overflow-wrap:anywhere;
+    line-height:1.12;
+  }
+
+  .welcome-media{
+    width:68px;
+    height:68px;
+    flex:0 0 68px;
+    border-radius:15px;
+  }
 }

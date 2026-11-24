@@ -361,21 +361,21 @@ function renderCard(){
       </div>
       <div class="social-actions">
         ${
-          r.phone?
-          actionLink(
-            "phone",
-            telHref(r.phone),
-            "Call"
-          ):
-          ""
-        }
-        ${
           r.whatsapp?
           actionLink(
             "whatsapp",
             "https://wa.me/"+
             waDigits(r.whatsapp),
             "WhatsApp"
+          ):
+          ""
+        }
+        ${
+          r.phone?
+          actionLink(
+            "phone",
+            telHref(r.phone),
+            "Call"
           ):
           ""
         }
@@ -404,10 +404,10 @@ function renderCard(){
           r.locationLink?
           actionLink(
             "map",
-            directionsUrl(
+            mapsUrl(
               r.locationLink
             ),
-            "Maps"
+            "Location"
           ):
           ""
         }
@@ -834,10 +834,36 @@ function closeShareSheet(){
 
   document.removeEventListener("keydown",shareSheetKey);
 }
+function isOwnCard(guid){
+  if(!guid)return false;
+
+  if(savedCards.some(card=>card.guid===guid))return true;
+
+  try{
+    const cached=DVC.cacheGet(DVC.cardsKey(DVC.getAppId()));
+    const list=cached&&cached.data&&cached.data.cards;
+
+    if(Array.isArray(list)&&list.some(card=>card.guid===guid))return true;
+
+    return DVC.storedCards.has(guid);
+  }catch(e){
+    return false;
+  }
+}
+
 function refreshSaveButton(){
   const button=$("saveCard");
 
   if(!button||!currentCard)return;
+
+  /* a card you created is never saved: it is already yours */
+  if(isOwnCard(currentCard.guid)){
+    DVC.savedCards.remove(currentCard.guid);
+    button.classList.add("hidden");
+    return;
+  }
+
+  button.classList.remove("hidden");
 
   const saved=DVC.savedCards.has(currentCard.guid);
   const label=button.querySelector("span");
@@ -850,6 +876,11 @@ function refreshSaveButton(){
 /* Save Card: keeps this card in savedCards/<guid> on this device */
 function saveCardLocally(){
   if(!currentCard)return;
+
+  if(isOwnCard(currentCard.guid)){
+    showToast("This is your own card, so it is not added to Saved Cards.");
+    return;
+  }
 
   if(DVC.savedCards.has(currentCard.guid)){
     DVC.savedCards.remove(currentCard.guid);
@@ -1046,34 +1077,38 @@ function driveImageUrl(
   }
   return url;
 }
-function directionsUrl(
-  value
-){
+/* Location button: https://www.google.com/maps?q=<coordinates or place> */
+function mapsUrl(value){
+  const raw=String(value||"").trim();
+
+  if(!raw)return"";
+
+  let query="";
+
   try{
-    const url=
-      new URL(
-        String(value||"")
-      );
-    const query=
-      url.searchParams.get(
-        "query"
-      )||
-      url.searchParams.get(
-        "q"
-      );
-    return query?
-      "https://www.google.com/maps/dir/?api=1&destination="+
-      encodeURIComponent(
-        query
-      ):
-      String(value||"");
+    const url=new URL(raw);
+
+    query=
+      url.searchParams.get("q")||
+      url.searchParams.get("query")||
+      url.searchParams.get("destination")||
+      "";
+
+    if(!query){
+      /* .../@12.97,77.59,17z or /place/12.97,77.59 */
+      const at=/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(url.pathname+url.hash);
+
+      if(at)query=at[1]+","+at[2];
+    }
+
+    if(!query)return raw;
   }catch(error){
-    return String(
-      value||
-      ""
-    );
+    query=raw;
   }
+
+  return"https://www.google.com/maps?q="+encodeURIComponent(query).replace(/%2C/gi,",");
 }
+
 function normalizeWebsite(
   value
 ){
@@ -1183,17 +1218,62 @@ function actionLink(
   url,
   label
 ){
+  const external=/^https?:/i.test(url)&&type!=="phone";
+
   return`
     <a
-      class="social-action"
+      class="social-action ${safeAttr(type)}"
       href="${safeAttr(url)}"
+      ${external?'target="_blank" rel="noopener"':""}
       aria-label="${safeAttr(label)}"
       title="${safeAttr(label)}"
     >
-      ${icon(type)}
+      ${colorIcon(type)}
+      <span>${escapeHtml(label)}</span>
     </a>
   `;
 }
+
+/* coloured icons for the action tiles */
+function colorIcon(type){
+  const icons={
+    whatsapp:`
+      <svg viewBox="0 0 48 48">
+        <path fill="#25D366" d="M24 4a20 20 0 0 0-17.2 30.2L4 44l10.2-2.7A20 20 0 1 0 24 4z"/>
+        <path fill="#fff" d="M17.2 14.2c.5-.9 1.2-.9 1.7-.3l1.6 2.2c.4.6.3 1.2-.2 1.6l-.9.8c1.2 2.2 2.9 3.9 5.2 5.2l.8-.9c.4-.5 1-.6 1.6-.2l2.2 1.6c.6.5.6 1.2-.3 1.8-1 .8-2.4 1.2-3.7 1-6-1-10.4-5.3-11.2-11.2-.2-1.3.2-2.7 1.2-3.6z"/>
+      </svg>`,
+    phone:`
+      <svg viewBox="0 0 48 48">
+        <path fill="#1FA85B" d="M40 33.6v5.3a3.5 3.5 0 0 1-3.8 3.5A34.7 34.7 0 0 1 21 37 34.1 34.1 0 0 1 10.5 26.5 34.7 34.7 0 0 1 5.6 11.2 3.5 3.5 0 0 1 9.1 7.4h5.3a3.5 3.5 0 0 1 3.5 3c.2 1.6.6 3.1 1.1 4.6a3.5 3.5 0 0 1-.8 3.7l-2.2 2.2a28 28 0 0 0 10.5 10.5l2.2-2.2a3.5 3.5 0 0 1 3.7-.8c1.5.5 3 .9 4.6 1.1a3.5 3.5 0 0 1 3 3.7z"/>
+      </svg>`,
+    email:`
+      <svg viewBox="0 0 48 48">
+        <rect x="4" y="9" width="40" height="30" rx="5" fill="#EA4335"/>
+        <path d="m6 13 18 14 18-14" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`,
+    website:`
+      <svg viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="20" fill="#1A73E8"/>
+        <g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round">
+          <ellipse cx="24" cy="24" rx="8.5" ry="20"/>
+          <path d="M4.5 24h39M7.5 14h33M7.5 34h33"/>
+        </g>
+      </svg>`,
+    map:`
+      <svg viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 3C15.7 3 9 9.6 9 17.8 9 28.6 24 45 24 45s15-16.4 15-27.2C39 9.6 32.3 3 24 3z"/>
+        <circle cx="24" cy="18" r="6" fill="#fff"/>
+      </svg>`,
+    more:`
+      <svg viewBox="0 0 48 48">
+        <circle cx="24" cy="15" r="8" fill="#1A73E8"/>
+        <path fill="#1A73E8" d="M8 41c0-9 7.2-15 16-15s16 6 16 15z"/>
+      </svg>`
+  };
+
+  return icons[type]||icon(type);
+}
+
 function icon(
   type
 ){
@@ -1533,4 +1613,6 @@ function refreshEditButton(){
   }
 
   button.classList.toggle("hidden",!owned);
+
+  refreshSaveButton();
 }

@@ -47,7 +47,10 @@ function render(){
 	const q=query.trim().toLowerCase();
 
 	/* sorted by the person's name, then institute */
+	const mine=new Set(DVC.storedCards.owned(DVC.getAppId()).map(x=>x.guid));
+
 	const items=(store?store.all():[])
+		.filter(x=>!mine.has(x.guid))
 		.map(x=>Object.assign({},x.record,{guid:x.guid}))
 		.filter(c=>!q||[c.name,c.instituteName,c.title].join(" ").toLowerCase().includes(q))
 		.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""))||String(a.instituteName||"").localeCompare(String(b.instituteName||"")));
