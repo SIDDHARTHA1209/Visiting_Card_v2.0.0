@@ -131,6 +131,8 @@ async function openCard(guid){
 
         refreshSaveButton();
 
+        DVC.track(guid,"view");
+
         $("app").classList.remove("switching");
         switching=false;
       },
@@ -142,6 +144,11 @@ async function openCard(guid){
     if(guid!==activeGuid)return;
 
     $("app").classList.remove("switching");
+
+    if(/removed by its owner/i.test(error.message||"")){
+      DVC.savedCards.remove(guid);
+      DVC.cacheRemove("card:"+guid);
+    }
 
     if(!currentCard||!switching){
       if(!currentCard){
@@ -446,7 +453,17 @@ function renderCard(){
           ${icon("edit")}
           <span>Edit Card</span>
         </a>
+        <button
+          id="deleteCard"
+          class="main-action danger hidden"
+          type="button"
+          aria-label="Delete card"
+          title="Delete card"
+        >
+          ${icon("trash")}
+        </button>
       </div>
+      <div id="cardStats" class="card-stats hidden"></div>
       <button
         id="saveContact"
         class="contact-action"
@@ -654,6 +671,7 @@ function setupInteractions(){
     );
   // QR clicks must not navigate or trigger the card-flip handler.
   $("responseQr")?.addEventListener("click", event => event.stopPropagation());
+  $("deleteCard")?.addEventListener("click",deleteThisCard);
   $("shareCard")
     ?.addEventListener(
       "click",
@@ -763,6 +781,8 @@ async function shareCard(){
         text:"Digital visiting card of "+name,
         url:link
       });
+
+      DVC.track(currentCard.guid,"share");
     }catch(error){
       if(error&&error.name!=="AbortError"){
         openShareSheet(name,link);
@@ -811,8 +831,14 @@ function openShareSheet(name,link){
       return;
     }
 
+    if(event.target.closest('[data-share="wa"],[data-share="mail"]')){
+      DVC.track(currentCard&&currentCard.guid,"share");
+    }
+
     if(event.target.closest('[data-share="copy"]')){
       const ok=await copyText(link);
+
+      if(ok)DVC.track(currentCard&&currentCard.guid,"share");
 
       showToast(ok?"Card link copied.":"Could not copy. Select the link and copy it.",!ok);
 
@@ -884,12 +910,14 @@ function saveCardLocally(){
 
   if(DVC.savedCards.has(currentCard.guid)){
     DVC.savedCards.remove(currentCard.guid);
+    DVC.track(currentCard.guid,"unsave");
     refreshSaveButton();
     showToast("Removed from Saved Cards.");
     return;
   }
 
   DVC.savedCards.set(currentCard.guid,currentCard);
+  DVC.track(currentCard.guid,"save");
   refreshSaveButton();
   showToast("Saved. Find it in Saved Cards on the home page.");
 }
@@ -1327,6 +1355,14 @@ function icon(
         <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>
       </svg>
     `,
+    trash:`
+      <svg viewBox="0 0 24 24">
+        <path d="M3 6h18"/>
+        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+        <path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/>
+        <path d="M10 11v6M14 11v6"/>
+      </svg>
+    `,
     edit:`
       <svg viewBox="0 0 24 24">
         <path d="M12 20h9"/>
@@ -1614,5 +1650,50 @@ function refreshEditButton(){
 
   button.classList.toggle("hidden",!owned);
 
+  const del=$("deleteCard");
+
+  if(del)del.classList.toggle("hidden",!owned);
+
   refreshSaveButton();
+  refreshStats(owned);
+}
+
+async function deleteThisCard(){
+  if(!currentCard)return;
+
+  const label=[currentCard.name,currentCard.instituteName].filter(Boolean).join(" – ")||"this card";
+
+  try{
+    const done=await DVC.deleteOwnCard(currentCard.guid,label);
+
+    if(done)location.href="../";
+  }catch(error){
+    showToast(error.message||"Could not delete the card.",true);
+  }
+}
+
+/* views / shares / saves, shown only on my own cards */
+async function refreshStats(owned){
+  const box=$("cardStats");
+
+  if(!box||!currentCard)return;
+
+  if(!owned){
+    box.classList.add("hidden");
+    return;
+  }
+
+  const guid=currentCard.guid;
+
+  try{
+    const data=await DVC.get("?action=stats&appId="+encodeURIComponent(DVC.getAppId()),{retries:0});
+    const s=data&&data.stats&&data.stats[guid];
+
+    if(!s||!currentCard||currentCard.guid!==guid)return;
+
+    box.innerHTML=
+      '<strong>Viewed by '+s.views+' '+(s.views===1?"person":"people")+'</strong>'+
+      '<span>Shared '+s.shares+' '+(s.shares===1?"time":"times")+' · Saved by '+s.saves+'</span>';
+    box.classList.remove("hidden");
+  }catch(e){}
 }

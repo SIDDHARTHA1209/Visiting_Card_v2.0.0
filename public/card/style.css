@@ -885,3 +885,27 @@ a.main-action{
 .share-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .share-actions button,.share-actions a{padding:12px 8px;border-radius:10px;border:1px solid #d8d3c7;background:#fff;color:#111318;font:inherit;font-weight:800;text-align:center;text-decoration:none;cursor:pointer}
 .share-actions [data-share="copy"]{background:#0f766e;color:#fff;border-color:#0f766e}
+
+/* Delete (own cards) */
+.main-action.danger{color:#c62828;border-color:#efc3c3}
+.main-action.danger:hover{color:#fff;background:#c62828;border-color:#c62828}
+
+/* views / shares / saves (own cards) */
+.card-stats{
+  margin:14px auto 0;
+  padding:12px 16px;
+  max-width:340px;
+  text-align:center;
+  border-radius:14px;
+  background:#fff;
+  border:1px solid #e3ded3;
+  box-shadow:0 5px 14px rgba(0,0,0,.06);
+}
+.card-stats strong{display:block;font-size:18px;color:var(--navy)}
+.card-stats span{display:block;margin-top:3px;font-size:13px;color:#6b6b6b}
+
+/* icon-only delete button */
+#deleteCard{padding:0;width:48px}
+
+/* modal buttons (Close) centred */
+.modal-box button{display:block;margin-left:auto;margin-right:auto}

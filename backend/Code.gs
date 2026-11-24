@@ -4,6 +4,8 @@ const CONFIG={
   COMPANY_SHEET_NAME:"CompanyMaster",
   OWNER_SHEET_NAME:"CardOwners",
   RESPONSE_SHEET_NAME:"ViewerResponses",
+  STATS_SHEET_NAME:"CardStats",
+  VISITOR_SHEET_NAME:"CardVisitors",
   DRIVE_FOLDER_ID:"1nBH0EkyB4_Dj0LLEkYne-YdP4iJkABVo",
   FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/",
   MAX_UPLOAD_BYTES:9000000,
@@ -26,6 +28,8 @@ const COMPANY_HEADERS=[
 const OWNER_HEADERS=[
 	"appId","guid","cardName","createdAt","status","isFavourite"
 ];
+const STATS_HEADERS=["guid","views","shares","saves","updatedAt"];
+const VISITOR_HEADERS=["key","guid","type","createdAt"];
 const RESPONSE_HEADERS=[
   "responseId","cardGuid","appId","viewerName","phone","whatsapp","email","company","message","createdAt"
 ];
@@ -47,6 +51,10 @@ function doGet(e){
       return json_(getOwnedCards_(p.appId));
     }
 
+    if(action==="stats"){
+      return json_(getStats_(p.appId));
+    }
+
     if(action==="responses"){
       return json_(getViewerResponses_(p.appId,p.guid));
     }
@@ -62,7 +70,7 @@ function doGet(e){
     return json_({
       success:true,
       message:"Digital Visiting Card API",
-      actions:["submit","submitResponse","card","company","ownedCards","responses","favourite","status","health"]
+      actions:["submit","submitResponse","card","company","ownedCards","responses","favourite","status","delete","track","stats","health"]
     });
   }catch(err){
     return json_({
@@ -81,6 +89,8 @@ function doPost(e){
     if(action==="submit")return json_(submitCard_(body));
     if(action==="update")return json_(updateCard_(body));
     if(action==="submitresponse")return json_(submitViewerResponse_(body));
+    if(action==="delete")return json_(deleteCard_(body));
+    if(action==="track")return json_(trackEvent_(body));
     if(action==="favourite")return json_(updateOwnerField_(body,"isFavourite"));
     if(action==="status")return json_(updateOwnerField_(body,"status"));
 
@@ -361,6 +371,15 @@ function getCard_(guid){
     };
   }
 
+  if(isCardDeleted_(guid)){
+    return{
+      success:false,
+      status:410,
+      removed:true,
+      error:"This card was removed by its owner."
+    };
+  }
+
   const sheet=getSheet_();
   const values=sheet.getDataRange().getValues();
 
@@ -482,7 +501,7 @@ function getOwnedCards_(appId){
       row[ownerGuidIndex]||""
     ).trim();
 
-    if(!guid||!cardsByGuid[guid]){
+    if(!guid||!cardsByGuid[guid]||status==="Deleted"){
       continue;
     }
 
@@ -645,10 +664,178 @@ function getOwnedGuidSet_(appId){
   for(let i=1;i<values.length;i++){
     if(clean_(values[i][appIdIndex])===appId){
       const guid=clean_(values[i][guidIndex]);
-      if(guid)result[guid]=true;
+      if(guid&&clean_(values[i][statusIndex]||"Active")!=="Deleted")result[guid]=true;
     }
   }
   return result;
+}
+
+function isCardDeleted_(guid){
+  const values=getOwnerSheet_().getDataRange().getValues();
+  const guidIndex=OWNER_HEADERS.indexOf("guid");
+  const statusIndex=OWNER_HEADERS.indexOf("status");
+
+  for(let i=1;i<values.length;i++){
+    if(clean_(values[i][guidIndex])===guid){
+      return clean_(values[i][statusIndex]||"Active")==="Deleted";
+    }
+  }
+
+  return false;
+}
+
+/* Delete one of my own cards. The row is kept but marked Deleted, so the public
+   link stops working and the card disappears from every list. */
+function deleteCard_(p){
+  const appId=clean_(p.appId);
+  const guid=clean_(p.guid);
+
+  if(!appId||!guid)throw new Error("App ID and card ID are required.");
+
+  withLock_(function(){
+    const sheet=getOwnerSheet_();
+    const values=sheet.getDataRange().getValues();
+    const appIndex=OWNER_HEADERS.indexOf("appId");
+    const guidIndex=OWNER_HEADERS.indexOf("guid");
+    const statusIndex=OWNER_HEADERS.indexOf("status");
+    let found=false;
+
+    for(let i=1;i<values.length;i++){
+      if(clean_(values[i][appIndex])===appId&&clean_(values[i][guidIndex])===guid){
+        sheet.getRange(i+1,statusIndex+1).setValue("Deleted");
+        found=true;
+        break;
+      }
+    }
+
+    if(!found)throw new Error("You can only delete cards that were created on this device.");
+  });
+
+  try{
+    CacheService.getScriptCache().remove("card:"+guid);
+  }catch(e){}
+
+  invalidateOwnedCache_(appId);
+
+  return{success:true,guid:guid,deleted:true};
+}
+
+function getStatsSheet_(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet=ss.getSheetByName(CONFIG.STATS_SHEET_NAME);
+
+  if(!sheet)sheet=ss.insertSheet(CONFIG.STATS_SHEET_NAME);
+
+  ensureHeaders_(sheet,STATS_HEADERS,"stats");
+
+  return sheet;
+}
+
+function getVisitorSheet_(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet=ss.getSheetByName(CONFIG.VISITOR_SHEET_NAME);
+
+  if(!sheet)sheet=ss.insertSheet(CONFIG.VISITOR_SHEET_NAME);
+
+  ensureHeaders_(sheet,VISITOR_HEADERS,"visitors");
+
+  return sheet;
+}
+
+/* type: view | share | save | unsave.
+   views and saves count each person (device) once; shares count every tap. */
+function trackEvent_(p){
+  const guid=clean_(p.guid);
+  const type=clean_(p.type).toLowerCase();
+  const visitor=clean_(p.visitorId||p.appId);
+
+  if(!guid||["view","share","save","unsave"].indexOf(type)<0){
+    return{success:false,error:"Invalid event."};
+  }
+
+  /* the owner opening or saving their own card is not a view */
+  if((type==="view"||type==="save"||type==="unsave")&&visitor&&getOwnedGuidSet_(visitor)[guid]){
+    return{success:true,skipped:true};
+  }
+
+  withLock_(function(){
+    const statsSheet=getStatsSheet_();
+    let delta={views:0,shares:0,saves:0};
+
+    if(type==="share"){
+      delta.shares=1;
+    }else{
+      if(!visitor)return;
+
+      const visitors=getVisitorSheet_();
+      const key=(type==="unsave"?"save":type)+"|"+guid+"|"+visitor;
+      const hit=visitors.createTextFinder(key).matchEntireCell(true).findNext();
+
+      if(type==="view"){
+        if(hit)return;
+        visitors.appendRow([key,guid,"view",new Date().toISOString()]);
+        delta.views=1;
+      }else if(type==="save"){
+        if(hit)return;
+        visitors.appendRow([key,guid,"save",new Date().toISOString()]);
+        delta.saves=1;
+      }else{
+        if(!hit)return;
+        visitors.deleteRow(hit.getRow());
+        delta.saves=-1;
+      }
+    }
+
+    const finder=statsSheet.createTextFinder(guid).matchEntireCell(true).findNext();
+    let row=finder?finder.getRow():-1;
+
+    if(row<2){
+      statsSheet.appendRow([guid,0,0,0,""]);
+      row=statsSheet.getLastRow();
+    }
+
+    const range=statsSheet.getRange(row,1,1,5);
+    const v=range.getValues()[0];
+
+    range.setValues([[
+      guid,
+      Math.max(0,Number(v[1]||0)+delta.views),
+      Math.max(0,Number(v[2]||0)+delta.shares),
+      Math.max(0,Number(v[3]||0)+delta.saves),
+      new Date().toISOString()
+    ]]);
+  });
+
+  return{success:true};
+}
+
+/* views / shares / saves for every card that belongs to this device */
+function getStats_(appId){
+  appId=clean_(appId);
+
+  if(!appId)return{success:false,status:400,error:"App ID is required."};
+
+  const owned=getOwnedGuidSet_(appId);
+  const values=getStatsSheet_().getDataRange().getValues();
+  const stats={};
+
+  Object.keys(owned).forEach(function(guid){
+    stats[guid]={views:0,shares:0,saves:0};
+  });
+
+  for(let i=1;i<values.length;i++){
+    const guid=clean_(values[i][0]);
+
+    if(stats[guid]){
+      stats[guid]={
+        views:Number(values[i][1]||0),
+        shares:Number(values[i][2]||0),
+        saves:Number(values[i][3]||0)
+      };
+    }
+  }
+
+  return{success:true,stats:stats};
 }
 
 function getResponseCounts_(){

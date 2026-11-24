@@ -16,7 +16,7 @@
 	<link rel="icon" type="image/x-icon" href="../favicon.ico">
 	<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
 <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
-	<link rel="stylesheet" href="style.css?v=4500">
+	<link rel="stylesheet" href="style.css?v=4700">
 
 	<title>Digital Visiting Card Creator</title>
 </head>
@@ -281,12 +281,22 @@
 			</section>
 
 		</form>
+
+		<section id="deletePanel" class="panel hidden" style="margin-top:18px;border:1px solid #efc3c3;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px">
+			<div>
+				<h2 style="color:#c62828">Delete this card</h2>
+				<p>The card, its link and its QR code stop working for everyone.</p>
+			</div>
+			<button id="deleteCardButton" class="button" type="button" style="background:#c62828;color:#fff;border-color:#c62828">
+				Delete Card
+			</button>
+		</section>
 	</main>
 
 	<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-	<script src="../common.js?v=4500"></script>
-	<script src="script.js?v=4500"></script>
+	<script src="../common.js?v=4700"></script>
+	<script src="script.js?v=4700"></script>
 
 	<script>
 		/* Safety net: if an out-of-date script.js is loaded, never let Edit create a new card */
@@ -316,6 +326,6 @@
 			});
 		}
 	</script>
-<script src="../install.js?v=4500"></script>
+<script src="../install.js?v=4700"></script>
 </body>
 </html>

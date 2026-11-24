@@ -1616,6 +1616,22 @@ function fillEditForm(card){
 async function startEditMode(){
 	document.title="Edit Digital Visiting Card";
 
+	const delPanel=$("deletePanel");
+
+	if(delPanel){
+		delPanel.classList.remove("hidden");
+
+		$("deleteCardButton").addEventListener("click",async()=>{
+			const label=[$("name").value.trim(),$("instituteName").value.trim()].filter(Boolean).join(" – ")||"this card";
+
+			try{
+				if(await DVC.deleteOwnCard(EDIT_GUID,label))location.href="../";
+			}catch(error){
+				notify(error.message||"Could not delete the card.",true);
+			}
+		});
+	}
+
 	const back=document.querySelector(".back-home");
 
 	if(back){

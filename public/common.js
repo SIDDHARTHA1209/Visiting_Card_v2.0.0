@@ -445,6 +445,102 @@ var DVC=(function(){
     return store;
   }
 
+  /* ---------- confirm box, delete card, usage counters ---------- */
+
+  function confirmBox(message,okLabel,danger){
+    return new Promise(function(resolve){
+      var wrap=document.createElement("div");
+
+      wrap.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px";
+      wrap.innerHTML=
+        '<div role="alertdialog" aria-modal="true" style="background:#fff;color:#1b1b1b;max-width:360px;width:100%;border-radius:16px;padding:22px 20px;box-shadow:0 20px 50px rgba(0,0,0,.35);font-family:inherit">'+
+          '<p style="margin:0 0 18px;font-size:16px;line-height:1.45;font-weight:600"></p>'+
+          '<div style="display:flex;gap:10px;justify-content:flex-end">'+
+            '<button type="button" data-no style="padding:11px 18px;border-radius:10px;border:1px solid #cfc9bb;background:#fff;font-size:15px;font-weight:700;cursor:pointer">Cancel</button>'+
+            '<button type="button" data-yes style="padding:11px 18px;border-radius:10px;border:0;background:'+(danger===false?"#0f766e":"#d32f2f")+';color:#fff;font-size:15px;font-weight:700;cursor:pointer"></button>'+
+          '</div>'+
+        '</div>';
+
+      if(message&&message.html)wrap.querySelector("p").innerHTML=message.html;
+      else wrap.querySelector("p").textContent=message;
+      wrap.querySelector("[data-yes]").textContent=okLabel||"OK";
+
+      function done(v){
+        wrap.remove();
+        document.removeEventListener("keydown",key);
+        resolve(v);
+      }
+
+      function key(e){if(e.key==="Escape")done(false);}
+
+      wrap.addEventListener("click",function(e){
+        if(e.target===wrap||e.target.closest("[data-no]"))done(false);
+        else if(e.target.closest("[data-yes]"))done(true);
+      });
+
+      document.addEventListener("keydown",key);
+      document.body.appendChild(wrap);
+      wrap.querySelector("[data-no]").focus();
+    });
+  }
+
+  /* asks first, then deletes on the server and cleans every local copy.
+     Resolves true when deleted, false when the user cancelled. */
+  async function deleteOwnCard(guid,label){
+    var ok=await confirmBox(
+      {html:
+        '<strong style="color:#d32f2f">Delete</strong> <strong>'+escapeHtml(label)+'</strong>?<br>'+
+        '<span style="display:block;margin-top:8px;font-weight:500;color:#555">&ldquo;This can&rsquo;t be undone.&rdquo;</span>'
+      },
+      "Delete",
+      true
+    );
+
+    if(!ok)return false;
+
+    await post({action:"delete",appId:getAppId(),guid:guid});
+
+    try{storedCards.remove(guid);}catch(e){}
+    try{savedCards.remove(guid);}catch(e){}
+    try{cacheRemove("card:"+guid);}catch(e){}
+
+    try{
+      cacheCardsUpdate(getAppId(),function(list){
+        return list.filter(function(c){return c.guid!==guid;});
+      });
+    }catch(e){}
+
+    try{
+      if(lsGet("dvc:lastSelectedCard")===guid)lsRemove("dvc:lastSelectedCard");
+    }catch(e){}
+
+    return true;
+  }
+
+  /* view | share | save | unsave : fire and forget, never blocks the page */
+  function track(guid,type){
+    if(!guid)return;
+
+    try{
+      if(type==="view"){
+        var k="dvc:viewed:"+guid;
+
+        if(sessionStorage.getItem(k))return;
+
+        sessionStorage.setItem(k,"1");
+      }
+    }catch(e){}
+
+    try{
+      fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({action:"track",guid:guid,type:type,visitorId:getAppId()}),
+        keepalive:true
+      }).catch(function(){});
+    }catch(e){}
+  }
+
   var storedCards=makeStore("storedCards/");
   var savedCards=makeStore("savedCards/");
 
@@ -476,6 +572,9 @@ var DVC=(function(){
     cardLabel:cardLabel,
     whenQr:whenQr,
     cardsKey:cardsKey,
-    cacheCardsUpdate:cacheCardsUpdate
+    cacheCardsUpdate:cacheCardsUpdate,
+    confirmBox:confirmBox,
+    deleteOwnCard:deleteOwnCard,
+    track:track
   };
 })();
