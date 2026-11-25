@@ -8,7 +8,7 @@
   - Images, icons and the QR library CDN file: CACHE-FIRST (they never change).
   - API calls (Apps Script) are never intercepted.
 */
-const CACHE_NAME = "digicard-v4700";
+const CACHE_NAME = "digicard-v5000";
 const BASE_PATH = new URL(self.registration.scope).pathname;
 const NETWORK_TIMEOUT_MS = 4000;
 

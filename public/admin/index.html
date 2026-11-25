@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0b1020">
+<title>DigiCard Admin</title>
+<style>
+:root{
+  --bg:#0b1020;--bg2:#121a33;--panel:#161f3d;--panel2:#1b2650;--line:rgba(255,255,255,.09);
+  --text:#eef1ff;--muted:#9aa6d1;--accent:#7c8cff;--accent2:#b06bff;--gold:#ffc24a;--green:#2dd4a7;--red:#ff6b81;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);
+  background:
+    radial-gradient(900px 500px at 12% -10%,rgba(124,140,255,.22),transparent 60%),
+    radial-gradient(800px 500px at 100% 0%,rgba(176,107,255,.18),transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
+}
+.hidden{display:none!important}
+button{font:inherit;cursor:pointer}
+
+/* ---------- sign in ---------- */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login-card{
+  width:100%;max-width:410px;padding:34px 30px 28px;border-radius:24px;
+  background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border:1px solid var(--line);backdrop-filter:blur(14px);
+  box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(124,140,255,.08) inset;
+}
+.logo{
+  width:58px;height:58px;border-radius:18px;display:grid;place-items:center;margin-bottom:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 12px 30px rgba(124,140,255,.45);
+}
+.logo svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.login h1{margin:0 0 6px;font-size:27px;letter-spacing:-.02em}
+.login p{margin:0 0 24px;color:var(--muted);font-size:14px;line-height:1.5}
+.field{position:relative}
+.field label{display:block;margin-bottom:8px;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.field input{
+  width:100%;padding:15px 48px 15px 16px;border-radius:14px;font-size:16px;color:var(--text);
+  background:rgba(7,11,26,.7);border:1px solid var(--line);outline:none;transition:.2s;
+}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(124,140,255,.2)}
+.eye{position:absolute;right:6px;bottom:6px;width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:var(--muted)}
+.eye:hover{color:var(--text)}
+.eye svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;
+  padding:14px 20px;font-weight:700;font-size:15px;color:#fff;transition:.2s;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 10px 26px rgba(124,140,255,.35);
+}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.btn:disabled{opacity:.7;cursor:wait;transform:none}
+.btn.block{width:100%;margin-top:16px}
+.btn.ghost{background:rgba(255,255,255,.06);box-shadow:none;border:1px solid var(--line);color:var(--text);padding:10px 16px;font-size:14px}
+#goTxt{display:inline-flex;align-items:center;gap:10px}
+.spin{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err{min-height:20px;margin-top:14px;color:var(--red);font-size:14px;font-weight:600;text-align:center}
+.foot{margin-top:6px;text-align:center;color:var(--muted);font-size:12px}
+
+/* ---------- app shell ---------- */
+.top{
+  position:sticky;top:0;z-index:5;background:rgba(11,16,32,.78);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.top-in{max-width:1200px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;white-space:nowrap}
+.brand .logo{width:36px;height:36px;border-radius:11px;margin:0}
+.brand .logo svg{width:18px;height:18px}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.tab{border:0;background:transparent;color:var(--muted);padding:9px 16px;border-radius:10px;font-weight:700;font-size:14px;transition:.2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.on{color:#fff;background:linear-gradient(135deg,rgba(124,140,255,.5),rgba(176,107,255,.4));box-shadow:0 0 0 1px rgba(124,140,255,.5) inset}
+.sp{flex:1}
+main{max-width:1200px;margin:0 auto;padding:22px 18px 60px}
+h2{margin:0 0 4px;font-size:22px;letter-spacing:-.02em}
+.sub{margin:0 0 18px;color:var(--muted);font-size:14px}
+
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{
+  position:relative;overflow:hidden;padding:16px;border-radius:18px;border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--accent))}
+.kpi b{display:block;font-size:30px;letter-spacing:-.02em;line-height:1.1}
+.kpi span{display:block;margin-top:6px;color:var(--muted);font-size:12.5px}
+.kpi .ic{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--c,var(--accent)) 20%,transparent)}
+.kpi .ic svg{width:18px;height:18px;stroke:var(--c,var(--accent));fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+.card{margin-top:16px;padding:18px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(160deg,var(--panel2),var(--panel))}
+.card h3{margin:0 0 12px;font-size:16px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:12.5px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.search{flex:1;min-width:180px;padding:12px 14px;border-radius:12px;font-size:15px;color:var(--text);background:rgba(7,11,26,.6);border:1px solid var(--line);outline:none}
+.search:focus{border-color:var(--accent)}
+.chk{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;user-select:none}
+.chk input{accent-color:var(--accent);width:17px;height:17px}
+.count{color:var(--muted);font-size:13px;margin:2px 2px 10px}
+.table-wrap{overflow:auto;max-height:68vh;border-radius:14px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:11px 13px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{position:sticky;top:0;z-index:1;background:#18224a;color:var(--muted);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;user-select:none}
+th:hover{color:var(--text)}
+tbody tr:hover td{background:rgba(124,140,255,.07)}
+td.id{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--muted)}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.pill.y{background:rgba(45,212,167,.16);color:var(--green)}
+.pill.n{background:rgba(255,255,255,.07);color:var(--muted)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+html,body{overflow-x:hidden}
+.sortsel{display:none;padding:12px;border-radius:12px;font-size:15px;color:var(--text);background:rgba(7,11,26,.6);border:1px solid var(--line);outline:none}
+
+@media(max-width:700px){
+  .top-in{flex-wrap:wrap;gap:10px;padding:10px 14px}
+  .brand{order:1}
+  .sp{order:2}
+  #refresh{order:3}
+  #out{order:4}
+  .btn.ghost{padding:9px 13px;font-size:13px}
+  .tabs{order:5;width:100%}
+  .tab{flex:1;padding:10px 8px;font-size:13.5px}
+  main{padding:18px 14px 50px}
+  h2{font-size:20px}
+  .card{padding:14px;border-radius:16px}
+  .kpi b{font-size:26px}
+  .kpi .ic{width:30px;height:30px}
+
+  /* users: one card per person instead of a wide table */
+  .sortsel{display:block;flex:1 1 100%;min-width:0}
+  .search{flex:1 1 100%}
+  .table-wrap{max-height:none;border:0;overflow:visible}
+  table,tbody{display:block}
+  thead{display:none}
+  tbody tr{display:block;margin-bottom:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(7,11,26,.35)}
+  tbody td{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border:0;white-space:normal;text-align:right;font-size:13.5px}
+  tbody td::before{content:attr(data-l);color:var(--muted);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;text-align:left;flex:none;padding-top:2px}
+  tbody td.id{font-size:10.5px;letter-spacing:-.02em}
+  tbody td.empty{display:block;text-align:center}
+  tbody td.empty::before{content:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= SIGN IN ================= -->
+<section class="login" id="login">
+  <form class="login-card" id="f" autocomplete="on">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+    <h1>Admin sign in</h1>
+    <p>Enter the admin key you saved in Apps Script to see installs, opens and card activity.</p>
+    <div class="field">
+      <label for="key">ADMIN KEY</label>
+      <input id="key" type="password" placeholder="Enter your key" autocomplete="current-password" autofocus>
+      <button type="button" class="eye" id="eye" aria-label="Show or hide the key">
+        <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="btn block" id="go" type="submit"><span id="goTxt">Sign in</span></button>
+    <div class="err" id="err" role="alert"></div>
+    <div class="foot">DigiCard · private area</div>
+  </form>
+</section>
+
+<!-- ================= APP ================= -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/></svg></div>
+        <span>Admin panel</span>
+      </div>
+      <nav class="tabs" aria-label="Sections">
+        <button class="tab on" data-tab="overview" type="button">Overview</button>
+        <button class="tab" data-tab="users" type="button">Users &amp; installs</button>
+      </nav>
+      <div class="sp"></div>
+      <button class="btn ghost" id="refresh" type="button">Refresh</button>
+      <button class="btn ghost" id="out" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Overview -->
+    <section id="view-overview">
+      <h2>Overview</h2>
+      <p class="sub">How the app is being used.</p>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="card">
+        <h3>Last 30 days</h3>
+        <svg id="chart" viewBox="0 0 640 220" width="100%" role="img" aria-label="Daily opens, new devices and shares"></svg>
+        <div class="legend">
+          <span><i style="background:#7c8cff"></i>Opens</span>
+          <span><i style="background:#ffc24a"></i>New devices</span>
+          <span><i style="background:#2dd4a7"></i>Shares</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Users & installs -->
+    <section id="view-users" class="hidden">
+      <h2>Users &amp; installs</h2>
+      <p class="sub">Every device that opened the app. Tap a column heading to sort.</p>
+      <div class="card" style="margin-top:0">
+        <div class="bar">
+          <input class="search" id="q" type="search" placeholder="Search name or App ID">
+          <label class="chk"><input id="onlyInst" type="checkbox"> Installed only</label>
+          <select class="sortsel" id="sortSel" aria-label="Sort by"></select>
+          <button class="btn ghost" id="csv" type="button">Download CSV</button>
+        </div>
+        <div class="count" id="count"></div>
+        <div class="table-wrap"><table id="t"></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../common.js?v=5000"></script>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i);};
+  var esc=function(v){return String(v==null?"":v).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});};
+  var KEY="dvc:adminKey";
+  var adminKey="",users=[],usersLoaded=false,sort={k:"lastSeen",dir:-1},shown=[];
+
+  var COLS=[
+    ["name","User"],["appId","App ID"],["opens","Opens"],["cards","Cards"],["shares","Shares"],
+    ["installed","Installed"],["installedAt","Installed on"],["firstSeen","First seen"],["lastSeen","Last seen"],["mode","Last opened in"]
+  ];
+
+  var ICONS={
+    people:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+    install:'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+    open:'<path d="M15 3h6v6M10 14L21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>',
+    pulse:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+    share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
+    eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    save:'<path d="M6 3h12v18l-6-4-6 4z"/>'
+  };
+
+  function kpi(n,label,icon,color){
+    return'<div class="kpi" style="--c:'+color+'"><div class="ic"><svg viewBox="0 0 24 24">'+ICONS[icon]+'</svg></div><b>'+n+'</b><span>'+label+'</span></div>';
+  }
+
+  function when(v){
+    if(!v)return"-";
+    var d=new Date(v);
+    return isNaN(d)?"-":d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"})+" "+d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+  }
+
+  /* ---------- api ---------- */
+  async function api(action){
+    var r=await fetch(DVC.API_URL+"?action="+action+"&key="+encodeURIComponent(adminKey),{cache:"no-store"});
+    var d=await r.json();
+    if(!d.success)throw new Error(d.error||"Request failed.");
+    return d;
+  }
+
+  /* ---------- overview ---------- */
+  function chart(daily){
+    var W=640,H=220,L=34,B=26,T=10,R=8,n=Math.max(daily.length,1),max=1;
+    daily.forEach(function(d){max=Math.max(max,d.opens,d.newDevices,d.shares);});
+    var ih=H-B-T,bw=(W-L-R)/n,out="";
+    for(var g=0;g<=4;g++){
+      var y=T+ih-ih*g/4;
+      out+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="rgba(255,255,255,.08)"/>'+
+           '<text x="'+(L-6)+'" y="'+(y+3)+'" font-size="9" fill="#9aa6d1" text-anchor="end">'+Math.round(max*g/4)+'</text>';
+    }
+    daily.forEach(function(d,i){
+      var x=L+i*bw,w=Math.max(bw/4,2);
+      [["opens","#7c8cff"],["newDevices","#ffc24a"],["shares","#2dd4a7"]].forEach(function(s,j){
+        var h=ih*d[s[0]]/max;
+        out+='<rect x="'+(x+bw*.12+j*w)+'" y="'+(T+ih-h)+'" width="'+(w-1)+'" height="'+h+'" rx="2" fill="'+s[1]+'"><title>'+esc(d.date)+" · "+s[0]+": "+d[s[0]]+'</title></rect>';
+      });
+      if(n<=12||i%Math.ceil(n/8)===0)out+='<text x="'+(x+bw/2)+'" y="'+(H-8)+'" font-size="9" fill="#9aa6d1" text-anchor="middle">'+esc(String(d.date).slice(5))+'</text>';
+    });
+    $("chart").innerHTML=out;
+  }
+
+  function renderOverview(d){
+    var t=d.total;
+    $("kpis").innerHTML=
+      kpi(t.devices,"People who opened the app","people","#7c8cff")+
+      kpi(t.installed,"Installed the app","install","#2dd4a7")+
+      kpi(t.opens,"Total opens","open","#b06bff")+
+      kpi(t.activeWeek,"Active in last 7 days","pulse","#ffc24a")+
+      kpi(t.cardsActive,"Cards created (active)","card","#7c8cff")+
+      kpi(t.shares,"Times cards were shared","share","#2dd4a7")+
+      kpi(t.views,"Card views","eye","#b06bff")+
+      kpi(t.saves,"Card saves","save","#ffc24a");
+    chart(d.daily||[]);
+  }
+
+  /* ---------- users table ---------- */
+  function renderUsers(){
+    var q=$("q").value.trim().toLowerCase(),only=$("onlyInst").checked;
+    var list=users.filter(function(u){
+      if(only&&!u.installed)return false;
+      return !q||(u.name||"").toLowerCase().indexOf(q)>-1||u.appId.toLowerCase().indexOf(q)>-1;
+    });
+    list.sort(function(a,b){
+      var x=a[sort.k],y=b[sort.k];
+      if(typeof x==="number"||typeof x==="boolean")return(Number(x)-Number(y))*sort.dir;
+      return String(x||"").localeCompare(String(y||""))*sort.dir;
+    });
+    shown=list;
+    $("count").textContent=list.length+" of "+users.length+" users";
+    var head="<thead><tr>"+COLS.map(function(c){
+      return'<th data-k="'+c[0]+'">'+c[1]+(sort.k===c[0]?(sort.dir>0?" ▲":" ▼"):"")+"</th>";
+    }).join("")+"</tr></thead>";
+    var body=list.length?"<tbody>"+list.map(function(u){
+      var cells=[esc(u.name||"-"),esc(u.appId),u.opens,u.cards,u.shares,
+        u.installed?'<span class="pill y">Yes</span>':'<span class="pill n">No</span>',
+        when(u.installedAt),when(u.firstSeen),when(u.lastSeen),esc(u.mode||"-")];
+      return"<tr>"+cells.map(function(c,i){return"<td"+(i===1?' class="id"':"")+' data-l="'+COLS[i][1]+'">'+c+"</td>";}).join("")+"</tr>";
+    }).join("")+"</tbody>":'<tbody><tr><td colspan="10" class="empty" data-l="">No users match.</td></tr></tbody>';
+    $("t").innerHTML=head+body;
+    $("sortSel").value=sort.k;
+  }
+
+  function csv(){
+    var out=[COLS.map(function(c){return c[1];}).join(",")];
+    shown.forEach(function(u){
+      out.push(COLS.map(function(c){return'"'+String(u[c[0]]==null?"":u[c[0]]).replace(/"/g,'""')+'"';}).join(","));
+    });
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([out.join("\n")],{type:"text/csv"}));
+    a.download="digicard-users.csv";
+    a.click();
+  }
+
+  /* ---------- tabs ---------- */
+  async function showTab(name,quiet){
+    if(name!=="users")name="overview";
+    document.querySelectorAll(".tab").forEach(function(b){b.classList.toggle("on",b.dataset.tab===name);});
+    $("view-overview").classList.toggle("hidden",name!=="overview");
+    $("view-users").classList.toggle("hidden",name!=="users");
+    if(!quiet)history.replaceState(null,"","#"+name);
+
+    if(name==="users"&&!usersLoaded){
+      $("count").textContent="Loading...";
+      try{
+        users=(await api("adminusers")).users||[];
+        usersLoaded=true;
+        renderUsers();
+      }catch(e){$("count").textContent=e.message;}
+    }
+  }
+
+  /* ---------- sign in / out ---------- */
+  async function enter(key,fromStore){
+    adminKey=key;
+    $("go").disabled=true;
+    $("goTxt").innerHTML='<span class="spin"></span>Signing in…';
+    $("err").textContent="";
+
+    try{
+      renderOverview(await api("admin"));
+      try{sessionStorage.setItem(KEY,key);}catch(e){}
+      $("login").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      showTab((location.hash||"").replace("#",""),true);
+    }catch(e){
+      try{sessionStorage.removeItem(KEY);}catch(x){}
+      if(!fromStore)$("err").textContent=e.message||"Could not sign in.";
+    }finally{
+      $("go").disabled=false;
+      $("goTxt").textContent="Sign in";
+    }
+  }
+
+  $("f").addEventListener("submit",function(e){
+    e.preventDefault();
+    var k=$("key").value.trim();
+    if(!k){$("err").textContent="Please enter the admin key.";return;}
+    enter(k,false);
+  });
+  $("eye").addEventListener("click",function(){
+    var i=$("key");i.type=i.type==="password"?"text":"password";
+  });
+  $("out").addEventListener("click",function(){
+    try{sessionStorage.removeItem(KEY);}catch(e){}
+    location.hash="";
+    location.reload();
+  });
+  $("refresh").addEventListener("click",async function(){
+    try{
+      renderOverview(await api("admin"));
+      usersLoaded=false;
+      if(!$("view-users").classList.contains("hidden"))showTab("users",true);
+    }catch(e){}
+  });
+  document.querySelector(".tabs").addEventListener("click",function(e){
+    var b=e.target.closest(".tab");
+    if(b)showTab(b.dataset.tab);
+  });
+  $("q").addEventListener("input",renderUsers);
+  $("onlyInst").addEventListener("change",renderUsers);
+  $("csv").addEventListener("click",csv);
+  $("sortSel").innerHTML=COLS.map(function(c){return'<option value="'+c[0]+'">Sort: '+c[1]+"</option>";}).join("");
+  $("sortSel").value=sort.k;
+  $("sortSel").addEventListener("change",function(){
+    var k=this.value;
+    sort={k:k,dir:(k==="name"||k==="appId"||k==="mode")?1:-1};
+    renderUsers();
+  });
+  $("t").addEventListener("click",function(e){
+    var th=e.target.closest("th");
+    if(!th)return;
+    var k=th.dataset.k;
+    sort=sort.k===k?{k:k,dir:-sort.dir}:{k:k,dir:-1};
+    renderUsers();
+  });
+
+  try{var saved=sessionStorage.getItem(KEY);if(saved)enter(saved,true);}catch(e){}
+})();
+</script>
+</body>
+</html>

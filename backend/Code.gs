@@ -3,9 +3,10 @@ const CONFIG={
   SHEET_NAME:"Cards",
   COMPANY_SHEET_NAME:"CompanyMaster",
   OWNER_SHEET_NAME:"CardOwners",
-  RESPONSE_SHEET_NAME:"ViewerResponses",
   STATS_SHEET_NAME:"CardStats",
   VISITOR_SHEET_NAME:"CardVisitors",
+  DEVICE_SHEET_NAME:"Devices",
+  DAILY_SHEET_NAME:"DailyStats",
   DRIVE_FOLDER_ID:"1nBH0EkyB4_Dj0LLEkYne-YdP4iJkABVo",
   FRONTEND_BASE_URL:"https://siddhartha1209.github.io/Visiting_Card_v2.0.0/",
   MAX_UPLOAD_BYTES:9000000,
@@ -29,10 +30,9 @@ const OWNER_HEADERS=[
 	"appId","guid","cardName","createdAt","status","isFavourite"
 ];
 const STATS_HEADERS=["guid","views","shares","saves","updatedAt"];
+const DEVICE_HEADERS=["deviceId","firstSeen","lastSeen","opens","installed","installedAt","shares","lastMode"];
+const DAILY_HEADERS=["date","opens","newDevices","installs","shares"];
 const VISITOR_HEADERS=["key","guid","type","createdAt"];
-const RESPONSE_HEADERS=[
-  "responseId","cardGuid","appId","viewerName","phone","whatsapp","email","company","message","createdAt"
-];
 
 function doGet(e){
   try{
@@ -51,12 +51,16 @@ function doGet(e){
       return json_(getOwnedCards_(p.appId));
     }
 
-    if(action==="stats"){
-      return json_(getStats_(p.appId));
+    if(action==="adminusers"){
+      return json_(getAdminUsers_(p.key));
     }
 
-    if(action==="responses"){
-      return json_(getViewerResponses_(p.appId,p.guid));
+    if(action==="admin"){
+      return json_(getAdminStats_(p.key));
+    }
+
+    if(action==="stats"){
+      return json_(getStats_(p.appId));
     }
 
     if(action==="health"){
@@ -70,7 +74,7 @@ function doGet(e){
     return json_({
       success:true,
       message:"Digital Visiting Card API",
-      actions:["submit","submitResponse","card","company","ownedCards","responses","favourite","status","delete","track","stats","health"]
+      actions:["submit","card","company","ownedCards","favourite","status","delete","track","stats","admin","adminusers","health"]
     });
   }catch(err){
     return json_({
@@ -88,7 +92,6 @@ function doPost(e){
 
     if(action==="submit")return json_(submitCard_(body));
     if(action==="update")return json_(updateCard_(body));
-    if(action==="submitresponse")return json_(submitViewerResponse_(body));
     if(action==="delete")return json_(deleteCard_(body));
     if(action==="track")return json_(trackEvent_(body));
     if(action==="favourite")return json_(updateOwnerField_(body,"isFavourite"));
@@ -478,7 +481,6 @@ function getOwnedCards_(appId){
     }
   }
 
-  const responseCounts=getResponseCounts_();
   const companyMap=getCompanyDescriptionMap_();
   const cards=[];
 
@@ -516,7 +518,6 @@ function getOwnedCards_(appId){
       isFavourite:
         String(row[ownerFavouriteIndex]||"false")
           .toLowerCase()==="true",
-      responseCount:responseCounts[guid]||0
     });
   }
 
@@ -575,84 +576,8 @@ function withLock_(fn){
 }
 
 
-function getViewerResponses_(appId,guid){
-  appId=clean_(appId);
-  guid=clean_(guid);
-  if(!appId)return{success:false,status:400,error:"App ID is required."};
-  const owned=getOwnedGuidSet_(appId);
-  const sheet=getResponseSheet_();
-  const values=sheet.getDataRange().getValues();
-  const records=[];
-  if(values.length<2)return{success:true,appId:appId,count:0,responses:[]};
-  const indexes={};
-  RESPONSE_HEADERS.forEach(function(header,index){indexes[header]=index;});
-  for(let i=1;i<values.length;i++){
-    const rowGuid=clean_(values[i][indexes.cardGuid]);
-    if(!owned[rowGuid])continue;
-    if(guid&&rowGuid!==guid)continue;
-    records.push({
-      responseId:clean_(values[i][indexes.responseId]),
-      cardGuid:rowGuid,
-      appId:clean_(values[i][indexes.appId]),
-      viewerName:clean_(values[i][indexes.viewerName]),
-      phone:clean_(values[i][indexes.phone]),
-      whatsapp:clean_(values[i][indexes.whatsapp]),
-      email:clean_(values[i][indexes.email]),
-      company:clean_(values[i][indexes.company]),
-      message:clean_(values[i][indexes.message]),
-      createdAt:values[i][indexes.createdAt] instanceof Date?values[i][indexes.createdAt].toISOString():clean_(values[i][indexes.createdAt])
-    });
-  }
-  records.reverse();
-  return{success:true,appId:appId,count:records.length,responses:records};
-}
 
-function submitViewerResponse_(p){
-  const guid=clean_(p.cardGuid||p.guid);
-  const errors=[];
-  if(!guid)errors.push("Card GUID is required.");
-  if(!clean_(p.viewerName))errors.push("Name is required.");
-  const email=clean_(p.email);
-  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))errors.push("Email address is invalid.");
-  if(clean_(p.message).length>1000)errors.push("Message is too long.");
-  if(errors.length)throw new Error(errors.join(" "));
-  const owner=getOwnerForGuid_(guid);
-  if(!owner)throw new Error("Card owner not found.");
-  const sheet=getResponseSheet_();
-  const responseId=Utilities.getUuid();
-  const createdAt=new Date().toISOString();
-  const record={
-    responseId:responseId,
-    cardGuid:guid,
-    appId:owner.appId,
-    viewerName:clean_(p.viewerName),
-    phone:clean_(p.phone),
-    whatsapp:clean_(p.whatsapp),
-    email:email,
-    company:clean_(p.company),
-    message:clean_(p.message),
-    createdAt:createdAt
-  };
-  withLock_(function(){
-    appendRowAsText_(sheet,RESPONSE_HEADERS.map(function(header){return record[header]||"";}),["phone","whatsapp"],RESPONSE_HEADERS);
-  });
-  invalidateOwnedCache_(owner.appId);
-  return{success:true,responseId:responseId,cardGuid:guid,createdAt:createdAt};
-}
 
-function getOwnerForGuid_(guid){
-  const sheet=getOwnerSheet_();
-  const values=sheet.getDataRange().getValues();
-  const guidIndex=OWNER_HEADERS.indexOf("guid");
-  const appIdIndex=OWNER_HEADERS.indexOf("appId");
-  const statusIndex=OWNER_HEADERS.indexOf("status");
-  for(let i=1;i<values.length;i++){
-    if(clean_(values[i][guidIndex])===guid&&clean_(values[i][statusIndex]||"Active")==="Active"){
-      return{appId:clean_(values[i][appIdIndex]),guid:guid};
-    }
-  }
-  return null;
-}
 
 function getOwnedGuidSet_(appId){
   const sheet=getOwnerSheet_();
@@ -749,6 +674,17 @@ function trackEvent_(p){
   const type=clean_(p.type).toLowerCase();
   const visitor=clean_(p.visitorId||p.appId);
 
+  /* app-level events (no card): open / install */
+  if(type==="open"||type==="install"){
+    if(!visitor)return{success:false,error:"Device ID is required."};
+
+    withLock_(function(){
+      touchDevice_(visitor,type,clean_(p.mode));
+    });
+
+    return{success:true};
+  }
+
   if(!guid||["view","share","save","unsave"].indexOf(type)<0){
     return{success:false,error:"Invalid event."};
   }
@@ -764,6 +700,12 @@ function trackEvent_(p){
 
     if(type==="share"){
       delta.shares=1;
+
+      if(visitor){
+        touchDevice_(visitor,"share","");
+      }else{
+        bumpDaily_({shares:1});
+      }
     }else{
       if(!visitor)return;
 
@@ -809,6 +751,255 @@ function trackEvent_(p){
   return{success:true};
 }
 
+function getDeviceSheet_(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet=ss.getSheetByName(CONFIG.DEVICE_SHEET_NAME);
+
+  if(!sheet)sheet=ss.insertSheet(CONFIG.DEVICE_SHEET_NAME);
+
+  ensureHeaders_(sheet,DEVICE_HEADERS,"devices");
+
+  return sheet;
+}
+
+function getDailySheet_(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet=ss.getSheetByName(CONFIG.DAILY_SHEET_NAME);
+
+  if(!sheet){
+    sheet=ss.insertSheet(CONFIG.DAILY_SHEET_NAME);
+    sheet.getRange("A:A").setNumberFormat("@");
+  }
+
+  ensureHeaders_(sheet,DAILY_HEADERS,"daily");
+
+  return sheet;
+}
+
+function today_(){
+  return Utilities.formatDate(new Date(),"Asia/Kolkata","yyyy-MM-dd");
+}
+
+/* add numbers to today's row (call while holding the lock) */
+function bumpDaily_(add){
+  const sheet=getDailySheet_();
+  const day=today_();
+  const hit=sheet.createTextFinder(day).matchEntireCell(true).findNext();
+  let row=hit?hit.getRow():-1;
+
+  if(row<2){
+    row=sheet.getLastRow()+1;
+    sheet.getRange(row,1).setNumberFormat("@").setValue(day);
+    sheet.getRange(row,2,1,4).setValues([[0,0,0,0]]);
+  }
+
+  const range=sheet.getRange(row,2,1,4);
+  const v=range.getValues()[0];
+
+  range.setValues([[
+    Number(v[0]||0)+(add.opens||0),
+    Number(v[1]||0)+(add.newDevices||0),
+    Number(v[2]||0)+(add.installs||0),
+    Number(v[3]||0)+(add.shares||0)
+  ]]);
+}
+
+/* one row per device: opens, install, shares (call while holding the lock) */
+function touchDevice_(deviceId,type,mode){
+  const sheet=getDeviceSheet_();
+  const now=new Date().toISOString();
+  const hit=sheet.createTextFinder(deviceId).matchEntireCell(true).findNext();
+  const daily={};
+  let row=hit?hit.getRow():-1;
+
+  if(row<2){
+    sheet.appendRow([deviceId,now,now,0,"false","",0,""]);
+    row=sheet.getLastRow();
+    daily.newDevices=1;
+  }
+
+  const range=sheet.getRange(row,1,1,DEVICE_HEADERS.length);
+  const v=range.getValues()[0];
+  let opens=Number(v[3]||0);
+  let installed=String(v[4]).toLowerCase()==="true";
+  let installedAt=v[5]||"";
+  let shares=Number(v[6]||0);
+  let lastMode=v[7]||"";
+
+  if(type==="open"){
+    opens++;
+    daily.opens=1;
+    lastMode=mode||lastMode;
+  }
+
+  if(type==="share"){
+    shares++;
+    daily.shares=1;
+  }
+
+  /* an "install" event, or opening from the home screen, means it is installed */
+  if(type==="install"||(type==="open"&&mode==="standalone")){
+    if(!installed){
+      installed=true;
+      installedAt=now;
+      daily.installs=1;
+    }
+  }
+
+  range.setValues([[deviceId,v[1]||now,now,opens,String(installed),installedAt,shares,lastMode]]);
+  bumpDaily_(daily);
+}
+
+/* Admin summary. The key is stored in Script properties as ADMIN_KEY. */
+function getAdminStats_(key){
+  const saved=PropertiesService.getScriptProperties().getProperty("ADMIN_KEY");
+
+  if(!saved){
+    return{success:false,status:500,error:"ADMIN_KEY is not set in Script properties."};
+  }
+
+  if(String(key||"")!==saved){
+    return{success:false,status:401,error:"Wrong admin key."};
+  }
+
+  const users={};
+  const total={devices:0,installed:0,opens:0,shares:0,activeWeek:0,cardsCreated:0,cardsActive:0,cardsDeleted:0,views:0,saves:0};
+  const weekAgo=Date.now()-7*86400000;
+
+  function user(id){
+    if(!users[id])users[id]={id:id,opens:0,cards:0,shares:0,installed:false,firstSeen:"",lastSeen:""};
+    return users[id];
+  }
+
+  const dv=getDeviceSheet_().getDataRange().getValues();
+
+  for(let i=1;i<dv.length;i++){
+    const id=clean_(dv[i][0]);
+
+    if(!id)continue;
+
+    const u=user(id);
+
+    u.firstSeen=String(dv[i][1]||"");
+    u.lastSeen=String(dv[i][2]||"");
+    u.opens=Number(dv[i][3]||0);
+    u.installed=String(dv[i][4]).toLowerCase()==="true";
+    u.shares=Number(dv[i][6]||0);
+
+    total.devices++;
+    total.opens+=u.opens;
+    total.shares+=u.shares;
+
+    if(u.installed)total.installed++;
+    if(new Date(u.lastSeen).getTime()>=weekAgo)total.activeWeek++;
+  }
+
+  const ov=getOwnerSheet_().getDataRange().getValues();
+  const oApp=OWNER_HEADERS.indexOf("appId");
+  const oStatus=OWNER_HEADERS.indexOf("status");
+
+  for(let i=1;i<ov.length;i++){
+    const id=clean_(ov[i][oApp]);
+
+    if(!id)continue;
+
+    total.cardsCreated++;
+
+    if(clean_(ov[i][oStatus]||"Active")==="Deleted"){
+      total.cardsDeleted++;
+    }else{
+      total.cardsActive++;
+      user(id).cards++;
+    }
+  }
+
+  const cs=getStatsSheet_().getDataRange().getValues();
+
+  for(let i=1;i<cs.length;i++){
+    total.views+=Number(cs[i][1]||0);
+    total.saves+=Number(cs[i][3]||0);
+  }
+
+  const dy=getDailySheet_().getDataRange().getValues();
+  const daily=[];
+
+  for(let i=1;i<dy.length;i++){
+    const d=dy[i][0] instanceof Date?Utilities.formatDate(dy[i][0],"Asia/Kolkata","yyyy-MM-dd"):String(dy[i][0]);
+
+    if(!d)continue;
+
+    daily.push({date:d,opens:Number(dy[i][1]||0),newDevices:Number(dy[i][2]||0),installs:Number(dy[i][3]||0),shares:Number(dy[i][4]||0)});
+  }
+
+  const list=Object.keys(users).map(function(k){
+    const u=users[k];
+
+    u.id=k.slice(0,8);
+
+    return u;
+  }).sort(function(a,b){return b.opens-a.opens||b.cards-a.cards;}).slice(0,100);
+
+  return{success:true,total:total,daily:daily.slice(-30),users:list};
+}
+
+/* Every device that opened the app (no limit), for admin/installs.html */
+function getAdminUsers_(key){
+  const saved=PropertiesService.getScriptProperties().getProperty("ADMIN_KEY");
+
+  if(!saved)return{success:false,status:500,error:"ADMIN_KEY is not set in Script properties."};
+  if(String(key||"")!==saved)return{success:false,status:401,error:"Wrong admin key."};
+
+  const users={};
+
+  function user(id){
+    if(!users[id]){
+      users[id]={appId:id,name:"",opens:0,cards:0,shares:0,installed:false,installedAt:"",firstSeen:"",lastSeen:"",mode:""};
+    }
+
+    return users[id];
+  }
+
+  const dv=getDeviceSheet_().getDataRange().getValues();
+
+  for(let i=1;i<dv.length;i++){
+    const id=clean_(dv[i][0]);
+
+    if(!id)continue;
+
+    const u=user(id);
+
+    u.firstSeen=String(dv[i][1]||"");
+    u.lastSeen=String(dv[i][2]||"");
+    u.opens=Number(dv[i][3]||0);
+    u.installed=String(dv[i][4]).toLowerCase()==="true";
+    u.installedAt=String(dv[i][5]||"");
+    u.shares=Number(dv[i][6]||0);
+    u.mode=String(dv[i][7]||"");
+  }
+
+  const ov=getOwnerSheet_().getDataRange().getValues();
+  const iApp=OWNER_HEADERS.indexOf("appId");
+  const iName=OWNER_HEADERS.indexOf("cardName");
+  const iStatus=OWNER_HEADERS.indexOf("status");
+
+  for(let i=1;i<ov.length;i++){
+    const id=clean_(ov[i][iApp]);
+
+    if(!id||clean_(ov[i][iStatus]||"Active")==="Deleted")continue;
+
+    const u=user(id);
+
+    u.cards++;
+
+    if(!u.name)u.name=clean_(ov[i][iName]);
+  }
+
+  const list=Object.keys(users).map(function(k){return users[k];})
+    .sort(function(a,b){return String(b.lastSeen).localeCompare(String(a.lastSeen));});
+
+  return{success:true,count:list.length,users:list};
+}
+
 /* views / shares / saves for every card that belongs to this device */
 function getStats_(appId){
   appId=clean_(appId);
@@ -838,18 +1029,6 @@ function getStats_(appId){
   return{success:true,stats:stats};
 }
 
-function getResponseCounts_(){
-  const sheet=getResponseSheet_();
-  const values=sheet.getDataRange().getValues();
-  const result={};
-  if(values.length<2)return result;
-  const guidIndex=RESPONSE_HEADERS.indexOf("cardGuid");
-  for(let i=1;i<values.length;i++){
-    const guid=clean_(values[i][guidIndex]);
-    if(guid)result[guid]=(result[guid]||0)+1;
-  }
-  return result;
-}
 
 function updateOwnerField_(p,field){
   const appId=clean_(p.appId);
@@ -875,14 +1054,6 @@ function updateOwnerField_(p,field){
   });
 }
 
-function getResponseSheet_(){
-  if(!CONFIG.SPREADSHEET_ID||CONFIG.SPREADSHEET_ID==="YOUR_SPREADSHEET_ID")throw new Error("Google Sheet ID is not configured.");
-  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  let sheet=ss.getSheetByName(CONFIG.RESPONSE_SHEET_NAME);
-  if(!sheet)sheet=ss.insertSheet(CONFIG.RESPONSE_SHEET_NAME);
-  ensureHeaders_(sheet,RESPONSE_HEADERS,"responses");
-  return sheet;
-}
 
 /* normalizedCompanyName -> description, read from the sheet once and cached */
 function getCompanyDescriptionMap_(){
@@ -1730,8 +1901,7 @@ function diagnoseSheetHeaders() {
   const sheets = [
     { name: CONFIG.SHEET_NAME, headers: HEADERS },
     { name: CONFIG.OWNER_SHEET_NAME, headers: OWNER_HEADERS },
-    { name: CONFIG.COMPANY_SHEET_NAME, headers: COMPANY_HEADERS },
-    { name: CONFIG.RESPONSE_SHEET_NAME, headers: RESPONSE_HEADERS }
+    { name: CONFIG.COMPANY_SHEET_NAME, headers: COMPANY_HEADERS }
   ];
 
   const report = sheets.map(function (item) {
