@@ -32,6 +32,12 @@ async function loadCard(){
   if(loadStarted)return;
   loadStarted=true;
 
+  /* opened inside the Create page's preview popup */
+  if(new URLSearchParams(location.search).get("preview")){
+    renderPreview();
+    return;
+  }
+
   const guid=guidFromUrl();
 
   if(!guid){
@@ -1600,11 +1606,50 @@ function sizeBackName(stage){
   h2.style.whiteSpace=textW<=boxW+1?"nowrap":"";
 }
 
+/* Preview popup (from the Create page): both sides of the card are shown at once,
+   from the details typed so far. Nothing is loaded from or sent to the server. */
+function renderPreview(){
+  let r={};
+
+  try{
+    r=JSON.parse(sessionStorage.getItem("dvc:cardPreview")||"{}")||{};
+  }catch(e){}
+
+  currentCard=r;
+
+  const emails=String(r.emails||"").split(",").map(x=>x.trim()).filter(Boolean);
+  const logo=driveImageUrl(r.logoUrl);
+  const photo=driveImageUrl(r.photoUrl);
+  const website=r.website?normalizeWebsite(r.website):"";
+
+  document.body.classList.add("preview-mode");
+
+  $("app").className="card-page preview-page";
+  $("app").innerHTML=`
+    <section class="preview-side">
+      <h2>Front side</h2>
+      <div id="cardStage" class="card-stage preview-face">${frontHtml(r,logo,photo)}</div>
+    </section>
+    <section class="preview-side">
+      <h2>Back side</h2>
+      <div class="card-stage preview-face">${backHtml(r,emails,website)}</div>
+    </section>
+    <p class="preview-note">The QR code on the back is a sample. The real one is made when you create the card.</p>
+  `;
+
+  renderResponseQr(r.guid||"preview");
+  setupFit();
+}
+
 function fitAll(){
-  const stage=$("cardStage");
+  const stages=[...document.querySelectorAll(".card-stage")];
 
-  if(!stage)return;
+  if(!stages.length)return;
 
+  stages.forEach(fitStage);
+}
+
+function fitStage(stage){
   const width=stage.clientWidth;
 
   if(!width)return;

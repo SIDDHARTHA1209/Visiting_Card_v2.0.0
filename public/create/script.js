@@ -73,7 +73,74 @@ document.addEventListener("DOMContentLoaded",function(){
 
 	form.addEventListener("input",saveDraft);
 	form.addEventListener("submit",submitForm);
+
+	setupPreview();
 });
+
+/* ---------- card preview popup ---------- */
+function previewImage(previewId){
+	const img=$(previewId);
+
+	return img&&!img.classList.contains("hidden")?(img.getAttribute("src")||""):"";
+}
+
+function buildPreviewRecord(){
+	return{
+		guid:IS_EDIT?EDIT_GUID:"",
+		name:$("name").value.trim(),
+		title:$("title").value.trim(),
+		instituteName:$("instituteName").value.trim(),
+		companyDescription:$("companyDescription").value.trim(),
+		address:$("address").value.trim(),
+		website:$("website").value.trim(),
+		phone:phoneValue("phone"),
+		whatsapp:phoneValue("whatsapp"),
+		emails:$("emails").value.trim(),
+		locationLink:$("locationLink").value.trim(),
+		customLinks:getLinks(),
+		logoUrl:previewImage("logoPreview"),
+		photoUrl:previewImage("photoPreview")
+	};
+}
+
+function setupPreview(){
+	const tile=$("previewTile");
+	const modal=$("previewModal");
+	const frame=$("previewFrame");
+
+	if(!tile||!modal||!frame)return;
+
+	function close(){
+		modal.classList.add("hidden");
+		document.body.style.overflow="";
+		frame.removeAttribute("src");
+		tile.focus();
+	}
+
+	tile.addEventListener("click",()=>{
+		try{
+			sessionStorage.setItem("dvc:cardPreview",JSON.stringify(buildPreviewRecord()));
+		}catch(e){
+			notify("Could not open the preview. Please try again.",true);
+			return;
+		}
+
+		frame.src="../card/index.html?preview=1&t="+Date.now();
+		modal.classList.remove("hidden");
+		document.body.style.overflow="hidden";
+		$("previewClose").focus();
+	});
+
+	$("previewClose").addEventListener("click",close);
+
+	modal.addEventListener("click",event=>{
+		if(event.target===modal)close();
+	});
+
+	document.addEventListener("keydown",event=>{
+		if(event.key==="Escape"&&!modal.classList.contains("hidden"))close();
+	});
+}
 
 function notify(message,isError=false){
 	toast.textContent=message;
@@ -938,7 +1005,7 @@ async function openLocationPicker(){
 					setPin(ll);
 				},
 				()=>notify("Device location is not available. Tap the map instead.",true),
-				{enableHighAccuracy:true,timeout:15000,maximumAge:0}
+				{enableHighAccuracy:true,timeout:15100,maximumAge:0}
 			);
 		});
 	}else{
