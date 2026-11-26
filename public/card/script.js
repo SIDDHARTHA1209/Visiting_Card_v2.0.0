@@ -1493,7 +1493,7 @@ function frontHtml(r,logo,photo){
     `<div class="front-profile-fallback">${photoInitials}</div>`;
 
   const bottom=[
-    r.website?escapeHtml(r.website):"DIGITAL CARD",
+    r.website?escapeHtml(displayUrl(r.website)):"DIGITAL CARD",
     r.phone?escapeHtml(r.phone):""
   ].filter(Boolean);
 
@@ -1513,6 +1513,11 @@ function frontHtml(r,logo,photo){
         ${bottom.map(t=>`<span>${t}</span>`).join('<i class="front-divider"></i>')}
       </div>
     </article>`;
+}
+
+/* show a website without https:// (the link itself still uses the full address) */
+function displayUrl(value){
+  return String(value||"").trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i,"").replace(/\/+$/,"");
 }
 
 function backHtml(r,emails,website){
@@ -1535,7 +1540,7 @@ function backHtml(r,emails,website){
   }
 
   if(r.website){
-    info.push(`<a class="c-line" href="${safeAttr(website)}" target="_blank" rel="noopener">${escapeHtml(r.website)}</a>`);
+    info.push(`<a class="c-line" href="${safeAttr(website)}" target="_blank" rel="noopener">${escapeHtml(displayUrl(r.website))}</a>`);
   }
 
   return`
