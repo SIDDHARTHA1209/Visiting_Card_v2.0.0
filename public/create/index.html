@@ -16,7 +16,8 @@
 	<link rel="icon" type="image/x-icon" href="../favicon.ico">
 	<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
 <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
-	<link rel="stylesheet" href="style.css?v=5100">
+	<link rel="stylesheet" href="style.css?v=5200">
+	<link rel="stylesheet" href="../card/templates.css?v=5200">
 
 	<title>Digital Visiting Card Creator</title>
 </head>
@@ -268,10 +269,25 @@
 				</label>
 			</section>
 
-			<!-- Card preview -->
-			<section class="panel preview-panel">
+			<!-- 07: Card design (template) -->
+			<section class="panel template-section" id="templatePanel">
 				<div class="section-head">
 					<span class="section-number">07</span>
+					<div>
+						<h2>Choose Card Design</h2>
+						<p id="templateHint">Pick how your card will look. The design cannot be changed after the card is created.</p>
+					</div>
+				</div>
+
+				<div id="templateRow" class="tpl-row" role="radiogroup" aria-label="Card design"></div>
+
+				<div id="accentBox" class="accent-box hidden"></div>
+			</section>
+
+			<!-- Card preview (shown after a design is chosen) -->
+			<section class="panel preview-panel hidden" id="previewPanel">
+				<div class="section-head">
+					<span class="section-number">08</span>
 					<div>
 						<h2>Preview Your Card</h2>
 						<p>See both sides of your card exactly as people will see it.</p>
@@ -279,6 +295,7 @@
 				</div>
 
 				<button id="previewTile" class="preview-tile" type="button" aria-label="Click here to preview your card">
+					<span class="pv-live hidden" id="previewLive" aria-hidden="true"></span>
 					<span class="pv-art" aria-hidden="true">
 						<i class="pv-gold"></i>
 						<i class="pv-name"></i>
@@ -334,8 +351,9 @@
 
 	<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-	<script src="../common.js?v=5100"></script>
-	<script src="script.js?v=5100"></script>
+	<script src="../common.js?v=5200"></script>
+	<script src="../card/templates.js?v=5200"></script>
+	<script src="script.js?v=5200"></script>
 
 	<script>
 		/* Safety net: if an out-of-date script.js is loaded, never let Edit create a new card */
@@ -365,6 +383,6 @@
 			});
 		}
 	</script>
-<script src="../install.js?v=5100"></script>
+<script src="../install.js?v=5200"></script>
 </body>
 </html>

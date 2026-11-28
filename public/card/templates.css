@@ -1,0 +1,105 @@
+/* =========================================================
+   CARD TEMPLATES (Academic, Orange Edge, Fold, Midnight)
+   The shapes and sizes are set by templates.js; this file holds the shared rules.
+   --u is 1/680 of the card width.
+   ========================================================= */
+
+.tpl{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  border-radius:calc(var(--u) * 22);
+  --u:calc(100cqw / 680);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  border:0;
+  text-align:left;
+}
+
+/* the classic card, only used as a small preview in the template picker */
+.tpl-classic-thumb{background:linear-gradient(180deg,#fffdf8,#f5efe0)}
+
+/* switch off the classic gold look on the template cards */
+.tpl.card-front::before{display:none}
+
+.tpl-academic{background:#fdfcf9;color:#1d2433;font-family:"Playfair Display",Georgia,serif}
+.tpl-orange.card-front{background:#fff;color:#23262d}
+.tpl-orange.card-back{background:#2b2f38;color:#fff}
+.tpl-fold.card-front{background:#f7f8f8;color:#12313a}
+.tpl-fold.card-back{background:#12313a;color:#fff}
+.tpl-midnight{background:#0e1a33;color:#fff}
+
+/* initials shown when there is no photo / logo */
+.tpl-ini{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  font-weight:inherit;
+  letter-spacing:.02em;
+  background:inherit;
+}
+.tpl-academic .tpl-ini{color:inherit}
+
+/* QR */
+.tpl-qr{
+  z-index:5;
+  cursor:default;
+}
+.tpl-qr .qr{display:block;width:100%;height:100%}
+.tpl-qr canvas,
+.tpl-qr img{display:block;width:100%!important;height:100%!important}
+
+/* round icon badge (Orange Edge) */
+.tpl-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  color:#fff;
+  flex:none;
+}
+.tpl-badge svg{width:100%;height:100%;display:block}
+
+/* diamond icon badge (Midnight) */
+.tpl-dia{display:flex;align-items:center;min-width:0;gap:calc(var(--u) * 9)}
+.tpl-diamond{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transform:rotate(45deg);
+  border-radius:calc(var(--u) * 5);
+  color:#fff;
+  flex:none;
+}
+.tpl-diamond svg{width:100%;height:100%;display:block}
+
+/* contact text that wraps onto a second line instead of being cut */
+.tpl-wrap{
+  min-width:0;
+  overflow-wrap:break-word;
+  line-height:1.15;
+}
+.tpl-dia{flex:0 1 auto}
+
+/* text that is cut with "…" instead of wrapping */
+.tpl-cut{
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* thin divider between items (Fold) */
+.tpl-sep{
+  flex:none;
+  width:1px;
+  height:calc(var(--u) * 18);
+  background:rgba(255,255,255,.45);
+}
+
+/* text boxes: the design size comes from --fs, and script.js may shrink it */
+.tpl .fit-box{font-size:var(--fs,inherit)}
+
+/* the template designs are drawn for a 680 x 396 card, so keep that shape on every screen
+   (the classic card gets a slightly taller shape on phones) */
+.card-stage:has(.tpl){aspect-ratio:1.717 / 1}

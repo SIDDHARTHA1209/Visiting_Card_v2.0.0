@@ -8,7 +8,7 @@
   - Images, icons and the QR library CDN file: CACHE-FIRST (they never change).
   - API calls (Apps Script) are never intercepted.
 */
-const CACHE_NAME = "digicard-v5000";
+const CACHE_NAME = "digicard-v5200";
 const BASE_PATH = new URL(self.registration.scope).pathname;
 const NETWORK_TIMEOUT_MS = 4000;
 
@@ -27,6 +27,8 @@ const PRECACHE_ASSETS = [
     "card/",
     "card/style.css",
     "card/script.js",
+    "card/templates.js",
+    "card/templates.css",
     "saved/",
     "saved/style.css",
     "saved/script.js",
@@ -42,7 +44,9 @@ const PRECACHE_ASSETS = [
 const CACHEABLE_CDN_HOSTS = [
     "cdnjs.cloudflare.com",
     "cdn.jsdelivr.net",
-    "flagcdn.com"
+    "flagcdn.com",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com"
 ];
 
 self.addEventListener("install", event => {

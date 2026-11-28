@@ -1478,7 +1478,34 @@ function showError(
    CARD FACES
    ========================================================= */
 
+/* the card faces: the template chosen for the card decides how they look
+   (classic = the original gold design, also used by cards made before templates) */
 function frontHtml(r,logo,photo){
+  const emails=String(r.emails||"").split(",").map(x=>x.trim()).filter(Boolean);
+
+  return window.DVCT&&!DVCT.isClassic(r)?
+    DVCT.front({r,logo,photo,emails}):
+    classicFrontHtml(r,logo,photo);
+}
+
+function backHtml(r,emails,website){
+  const logo=driveImageUrl(r.logoUrl);
+  const photo=driveImageUrl(r.photoUrl);
+
+  return window.DVCT&&!DVCT.isClassic(r)?
+    DVCT.back({r,logo,photo,emails:emails||[]}):
+    classicBackHtml(r,emails,website);
+}
+
+/* classic cards can use the chosen accent colour instead of gold */
+function classicAccentStyle(r){
+  const ac=window.DVCT?DVCT.normalizeAccent(r.accent):"";
+
+  return ac&&ac!==DVCT.byId("classic").accent?
+    ` style="--gold:${ac};--gold-2:${DVCT.lighter(ac)}"`:"";
+}
+
+function classicFrontHtml(r,logo,photo){
   const logoInitials=escapeHtml(initials(r.instituteName||r.name));
   const photoInitials=escapeHtml(initials(r.name));
 
@@ -1498,7 +1525,7 @@ function frontHtml(r,logo,photo){
   ].filter(Boolean);
 
   return`
-    <article class="visiting-card card-front">
+    <article class="visiting-card card-front"${classicAccentStyle(r)}>
       <div class="front-navy"></div>
       <div class="front-gold"></div>
       <div class="front-logo">${logoBlock}</div>
@@ -1520,7 +1547,7 @@ function displayUrl(value){
   return String(value||"").trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i,"").replace(/\/+$/,"");
 }
 
-function backHtml(r,emails,website){
+function classicBackHtml(r,emails,website){
   const info=[];
 
   if(r.instituteName){
@@ -1544,7 +1571,7 @@ function backHtml(r,emails,website){
   }
 
   return`
-    <article class="visiting-card card-back">
+    <article class="visiting-card card-back"${classicAccentStyle(r)}>
       <div class="back-gold"></div>
       <div class="back-name fit-box">
         <h2>${escapeHtml(r.name||"Your Name")}</h2>

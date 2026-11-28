@@ -34,6 +34,7 @@ let editOriginal=null;
 document.addEventListener("DOMContentLoaded",function(){
 	getOrCreateAppId();
 	initPhoneFields();
+	setupTemplatePicker();
 
 	if(IS_EDIT){
 		startEditMode();
@@ -99,7 +100,9 @@ function buildPreviewRecord(){
 		locationLink:$("locationLink").value.trim(),
 		customLinks:getLinks(),
 		logoUrl:previewImage("logoPreview"),
-		photoUrl:previewImage("photoPreview")
+		photoUrl:previewImage("photoPreview"),
+		template:selectedTemplate||"classic",
+		accent:selectedAccent
 	};
 }
 
@@ -545,7 +548,10 @@ async function submitForm(event){
 			locationLink:$("locationLink").value.trim(),
 			customLinks:JSON.stringify(getLinks()),
 			logoImage:readImagePayload("logo"),
-			photoImage:readImagePayload("photo")
+			photoImage:readImagePayload("photo"),
+			/* no design chosen = the first (classic) design; the server ignores it when editing */
+			template:selectedTemplate||"classic",
+			accent:selectedAccent
 		};
 
 		if(IS_EDIT&&editOriginal){
@@ -1129,6 +1135,8 @@ function saveDraft(){
 	draft.whatsappCountry=pickers.whatsapp.iso;
 	draft.whatsappSameAsPhone=whatsappSameAsPhone;
 	draft.links=getLinks();
+	draft.template=selectedTemplate;
+	draft.accent=selectedAccent;
 
 	try{
 		localStorage.setItem(
@@ -1139,6 +1147,8 @@ function saveDraft(){
 }
 
 function clearFormFields(){
+	applyTemplateChoice("","",false);
+
 	[
 		"name",
 		"title",
@@ -1272,6 +1282,8 @@ function loadDraft(){
 
 		(Array.isArray(draft.links)?draft.links:[])
 			.forEach(link=>addLinkRow(link,false));
+
+		applyTemplateChoice(draft.template||"",draft.accent||"",false);
 
 	}catch(e){
 		clearFormFields();
@@ -1633,6 +1645,10 @@ function fillEditForm(card){
 				if($(id))$(id).value=card[id]||"";
 			});
 		},
+		design(){
+			/* the design is fixed once the card exists; only the colour can change */
+			applyTemplateChoice(card.template||"classic",card.accent||"",true);
+		},
 		phone(){
 			const phone=splitPhone(card.phone);
 
@@ -1801,4 +1817,122 @@ function finishEdit(body,data){
 	}catch(e){}
 
 	location.href="../card/?guid="+encodeURIComponent(EDIT_GUID);
+}
+
+
+/* ---------- card design (template) picker ---------- */
+let selectedTemplate="";   /* "" = nothing chosen yet */
+let selectedAccent="";     /* "" = the design's own colour */
+let templateLocked=false;  /* true when editing: the design cannot change */
+
+function setupTemplatePicker(){
+	if(!window.DVCT||!$("templateRow"))return;
+
+	renderTemplatePicker();
+
+	$("templateRow").addEventListener("click",event=>{
+		const button=event.target.closest(".tpl-thumb");
+
+		if(!button||templateLocked)return;
+
+		applyTemplateChoice(button.dataset.id,"",false);
+		saveDraft();
+	});
+
+	$("accentBox").addEventListener("click",event=>{
+		const swatch=event.target.closest(".accent-swatch");
+
+		if(!swatch)return;
+
+		setAccent(swatch.dataset.color);
+	});
+
+	$("accentBox").addEventListener("change",event=>{
+		if(event.target.id==="accentCustom")setAccent(event.target.value);
+	});
+}
+
+function setAccent(color){
+	const base=DVCT.byId(selectedTemplate).accent;
+	const clean=DVCT.normalizeAccent(color);
+
+	selectedAccent=clean&&clean!==base?clean:"";
+	renderTemplatePicker();
+	saveDraft();
+}
+
+function applyTemplateChoice(id,accent,lock){
+	selectedTemplate=window.DVCT&&DVCT.list.some(t=>t.id===id)?id:"";
+	selectedAccent=selectedTemplate?(DVCT.normalizeAccent(accent)||""):"";
+	templateLocked=Boolean(lock)&&Boolean(selectedTemplate);
+	renderTemplatePicker();
+}
+
+function renderTemplatePicker(){
+	const row=$("templateRow");
+	const box=$("accentBox");
+
+	if(!row||!window.DVCT)return;
+
+	row.innerHTML=DVCT.list
+		.filter(t=>!templateLocked||t.id===selectedTemplate)
+		.map(t=>{
+			const on=t.id===selectedTemplate;
+
+			return'<button type="button" class="tpl-thumb'+(on?" selected":"")+'" data-id="'+t.id+'" role="radio" aria-checked="'+on+'">'+
+				'<span class="tpl-thumb-stage">'+DVCT.thumb(t.id,on?selectedAccent:"")+'</span>'+
+				'<span class="tpl-thumb-name">'+t.name+(on?" ✓":"")+'</span>'+
+			'</button>';
+		}).join("");
+
+	$("templateHint").textContent=templateLocked?
+		"The design cannot be changed after the card is created. You can still change its colour.":
+		"Pick how your card will look. The design cannot be changed after the card is created.";
+
+	/* colour choice, once a design is picked */
+	if(selectedTemplate){
+		const base=DVCT.byId(selectedTemplate).accent;
+		const current=selectedAccent||base;
+		/* always six colours: the design's own first, then the shared ones */
+		const colors=[base].concat(DVCT.accents.filter(c=>c!==base)).slice(0,6);
+		const customOn=!colors.includes(current);
+
+		box.innerHTML=
+			'<span class="label-text">Accent colour <span class="optional-label">(Optional)</span></span>'+
+			'<div class="accent-swatches">'+
+			colors.map(c=>
+				'<button type="button" class="accent-swatch'+(c===current?" on":"")+'" data-color="'+c+'" style="background:'+c+'" aria-label="Colour '+c+(c===base?" (default)":"")+'"></button>'
+			).join("")+
+			'<label class="accent-custom'+(customOn?" on":"")+'" title="Custom colour"><input id="accentCustom" type="color" value="'+current+'" aria-label="Pick any colour">'+(customOn?'<span class="accent-dot" style="background:'+current+'"></span>':"")+'</label>'+
+			'</div>';
+		box.classList.remove("hidden");
+	}else{
+		box.innerHTML="";
+		box.classList.add("hidden");
+	}
+
+	/* the preview shows only after a design is chosen */
+	const panel=$("previewPanel");
+
+	if(panel)panel.classList.toggle("hidden",!selectedTemplate);
+
+	/* the blurred card on the preview button follows the chosen design */
+	const tile=$("previewTile");
+	const live=$("previewLive");
+
+	if(tile&&live){
+		const ac=DVCT.normalizeAccent(selectedAccent);
+		const html=selectedTemplate?DVCT.thumbBack(selectedTemplate,ac):"";
+
+		live.innerHTML=html;
+		live.classList.toggle("hidden",!html);
+		tile.classList.toggle("has-live",Boolean(html));
+
+		/* classic: recolour the gold stand-in */
+		const base=DVCT.byId("classic").accent;
+		const color=selectedTemplate==="classic"&&ac&&ac!==base?ac:"";
+
+		tile.style.setProperty("--pva",color||base);
+		tile.style.setProperty("--pva2",color?DVCT.lighter(color):"#ffd36a");
+	}
 }
