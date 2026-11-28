@@ -1893,8 +1893,8 @@ function renderTemplatePicker(){
 	if(selectedTemplate){
 		const base=DVCT.byId(selectedTemplate).accent;
 		const current=selectedAccent||base;
-		/* always six colours: the design's own first, then the shared ones */
-		const colors=[base].concat(DVCT.accents.filter(c=>c!==base)).slice(0,6);
+		/* always five colours: the design's own first, then the shared ones */
+		const colors=[base].concat(DVCT.accents.filter(c=>c!==base)).slice(0,5);
 		const customOn=!colors.includes(current);
 
 		box.innerHTML=
